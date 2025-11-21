@@ -1,14 +1,11 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<Shell
-    x:Class="HoundsBite.AppShell"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:HoundsBite"
-    Title="HoundsBite">
+<?xml version="1.0" encoding="utf-8" ?>
+<Shell x:Class="HoundsBite.AppShell"
+       xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:local="clr-namespace:HoundsBite">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
-
+    <TabBar>
+        <ShellContent Title="Ingredients" ContentTemplate="{DataTemplate local:IngredientsPage}" />
+        <ShellContent Title="Recipes" ContentTemplate="{DataTemplate local:RecipesPage}" />
+    </TabBar>
 </Shell>

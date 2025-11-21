@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="HoundsBite.IngredientsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Ingredients">
+
+    <VerticalStackLayout Padding="16" Spacing="16">
+
+        <Entry x:Name="IngredientEntry" Placeholder="Ingredient name" />
+        <Button Text="Add" Clicked="OnAddClicked" />
+
+        <CollectionView x:Name="IngredientList">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <HorizontalStackLayout>
+                        <Label Text="{Binding Name}" />
+                        <Button Text="Delete" CommandParameter="{Binding .}" Clicked="OnDeleteClicked" />
+                    </HorizontalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+    </VerticalStackLayout>
+</ContentPage>
