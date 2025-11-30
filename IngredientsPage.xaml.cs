@@ -29,7 +29,18 @@ public partial class IngredientsPage : ContentPage
     private async void OnDeleteClicked(object sender, EventArgs e)
     {
         var ing = (Ingredient)((Button)sender).CommandParameter;
+
+        // delete links first
+        var links = await _db.Connection.Table<RecipeIngredient>()
+            .Where(x => x.IngredientId == ing.Id)
+            .ToListAsync();
+
+        foreach (var link in links)
+            await _db.Connection.DeleteAsync(link);
+
+        // delete ingredient
         await _db.Connection.DeleteAsync(ing);
+
         IngredientList.ItemsSource = await _db.Connection.Table<Ingredient>().ToListAsync();
     }
 }

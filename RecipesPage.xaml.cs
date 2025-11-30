@@ -82,18 +82,29 @@ public partial class RecipesPage : ContentPage
         var recipeIngredients = await _db.Connection.Table<RecipeIngredient>().ToListAsync();
         var ingredients = await _db.Connection.Table<Ingredient>().ToListAsync();
 
-        // Build list with ingredient names included
-        var displayList = recipes.Select(r => new
+        // Build quick lookup: IngredientId -> Name
+        var ingredientMap = ingredients.ToDictionary(i => i.Id, i => i.Name);
+
+        var displayList = recipes.Select(r =>
         {
-            r.Id,
-            r.Name,
-            r.Type,
-            r.Description,
-            IngredientNames = string.Join(", ",
-                recipeIngredients
-                    .Where(ri => ri.RecipeId == r.Id)
-                    .Select(ri => ingredients.First(i => i.Id == ri.IngredientId).Name)
-            )
+            var names = recipeIngredients
+                .Where(ri => ri.RecipeId == r.Id)
+                .Select(ri =>
+                {
+                    // Safe lookup
+                    return ingredientMap.TryGetValue(ri.IngredientId, out var name)
+                        ? name
+                        : "(missing ingredient)";
+                });
+
+            return new
+            {
+                r.Id,
+                r.Name,
+                r.Type,
+                r.Description,
+                IngredientNames = string.Join(", ", names)
+            };
         }).ToList();
 
         RecipeList.ItemsSource = displayList;
@@ -102,7 +113,18 @@ public partial class RecipesPage : ContentPage
     private async void OnDeleteRecipe(object sender, EventArgs e)
     {
         var recipe = (Recipe)((Button)sender).CommandParameter;
+
+        // delete links first
+        var links = await _db.Connection.Table<RecipeIngredient>()
+            .Where(x => x.RecipeId == recipe.Id)
+            .ToListAsync();
+
+        foreach (var link in links)
+            await _db.Connection.DeleteAsync(link);
+
+        // delete recipe
         await _db.Connection.DeleteAsync(recipe);
-        RecipeList.ItemsSource = await _db.Connection.Table<Recipe>().ToListAsync();
+
+        await LoadRecipes();
     }
 }
