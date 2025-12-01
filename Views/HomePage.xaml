@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="HoundsBite.Views.HomePage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             BackgroundColor="#121212">
+
+    <VerticalStackLayout Padding="30" Spacing="30" VerticalOptions="Center">
+
+        <Label Text="Hound’s Bite"
+               FontSize="36"
+               FontAttributes="Bold"
+               HorizontalOptions="Center"
+               TextColor="White" />
+
+        <Label Text="Choose ingredients. Find recipes."
+               HorizontalOptions="Center"
+               FontSize="16"
+               TextColor="LightGray" />
+
+        <Button Text="Ingredients"
+                FontSize="18"
+                Clicked="GoToIngredients"
+                BackgroundColor="#8B0000"
+                TextColor="White" />
+
+        <Button Text="Recipes"
+                FontSize="18"
+                Clicked="GoToRecipes"
+                BackgroundColor="#444"
+                TextColor="White" />
+
+    </VerticalStackLayout>
+</ContentPage>
