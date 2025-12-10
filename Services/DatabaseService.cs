@@ -13,6 +13,7 @@ public class DatabaseService
         _db.CreateTableAsync<Ingredient>().Wait();
         _db.CreateTableAsync<Recipe>().Wait();
         _db.CreateTableAsync<RecipeIngredient>().Wait();
+        _db.CreateTableAsync<User>().Wait();
     }
 
     public SQLiteAsyncConnection Connection => _db;

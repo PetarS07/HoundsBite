@@ -6,17 +6,17 @@
        BackgroundColor="#121212"
        ForegroundColor="White">
 
-    <!-- HOME -->
+    
     <ShellContent Route="home"
                   Title="Home"
                   ContentTemplate="{DataTemplate views:HomePage}" />
 
-    <!-- INGREDIENTS -->
+    
     <ShellContent Route="ingredients"
                   Title="Ingredients"
                   ContentTemplate="{DataTemplate views:IngredientsPage}" />
 
-    <!-- RECIPES -->
+     
     <ShellContent Route="recipes"
                   Title="Recipes"
                   ContentTemplate="{DataTemplate views:RecipesPage}" />

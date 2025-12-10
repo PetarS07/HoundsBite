@@ -28,6 +28,12 @@
                 Clicked="GoToRecipes"
                 BackgroundColor="#444"
                 TextColor="White" />
+        
+        <Button Text="Login / Register"
+                FontSize="18"
+                Clicked="OpenLogin"
+                BackgroundColor="#555"
+                TextColor="White" />
 
     </VerticalStackLayout>
 </ContentPage>
