@@ -17,4 +17,14 @@ public class DatabaseService
     }
 
     public SQLiteAsyncConnection Connection => _db;
+
+    public Task<User?> GetUserByIdAsync(int id)
+    {
+        return _db.Table<User>().FirstOrDefaultAsync(u => u.Id == id);
+    }
+
+    public Task<User?> GetUserByUsernameAsync(string username)
+    {
+        return _db.Table<User>().FirstOrDefaultAsync(u => u.Username == username);
+    }
 }
