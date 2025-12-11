@@ -26,6 +26,7 @@
                         BackgroundColor="#555"
                         TextColor="White" />
 
+<<<<<<< HEAD
                 <Button x:Name="LogoutButton"
                         Text="Logout"
                         Clicked="OnLogoutClicked"
@@ -33,6 +34,32 @@
                         TextColor="White"
                         IsVisible="False" />
             </HorizontalStackLayout>
+=======
+        <Button Text="Recipes"
+                FontSize="18"
+                Clicked="GoToRecipes"
+                BackgroundColor="#444"
+                TextColor="White" />
+
+        <Label  x:Name="UserStatusLabel"
+                Text="Not logged in"
+                HorizontalOptions="Center"
+                TextColor="White"
+                FontSize="14"/>
+
+        <Button x:Name="LoginButton"
+                Text="Login / Register"
+                Clicked="OpenLogin"
+                BackgroundColor="#555"
+                TextColor="White"/>
+
+        <Button x:Name="LogoutButton"
+                Text="Logout"
+                Clicked="OnLogoutClicked"
+                BackgroundColor="#8B0000"
+                TextColor="White"
+                IsVisible="False"/>
+>>>>>>> 5cb21e2b2734e3de789230fd3a835b190378ffa8
 
             <!-- Admin management buttons (видими само за админ) -->
             <VerticalStackLayout Spacing="8">

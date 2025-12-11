@@ -1,6 +1,4 @@
 ﻿using HoundsBite.Services;
-using Microsoft.Maui.Storage;
-using System.Threading.Tasks;
 
 namespace HoundsBite.Views;
 
@@ -48,20 +46,8 @@ public partial class HomePage : ContentPage
             return;
         }
 
-        UserStatusLabel.Text = $"Logged as: {user.Username}";
-        LoginButton.IsVisible = false;
-        LogoutButton.IsVisible = true;
-
-        // Покажи админ бутоните само ако user.IsAdmin == true
-        AdminIngredientsButton.IsVisible = user.IsAdmin;
-        AdminRecipesButton.IsVisible = user.IsAdmin;
-    }
-
     private async void OpenLogin(object sender, EventArgs e)
-    {
-        // Предаваме DB услугата в попъп страницата (конструкторът трябва да го приема)
-        await Navigation.PushModalAsync(new LoginPopup(_db));
-    }
+        => await Navigation.PushModalAsync(new LoginPopup(_db));
 
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
@@ -78,19 +64,5 @@ public partial class HomePage : ContentPage
     }
 
     private async void GoToRecipes(object sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("//recipes");
-    }
-
-    // Навигация към display / public страници (по-късно ще ги създадем)
-    private async void GoToDisplayIngredients(object sender, EventArgs e)
-    {
-        // Реално име на роута ще го създадем; за сега можеш да използваш ingredients ако искаш да виждаш същите
-        await Shell.Current.GoToAsync("//display-ingredients");
-    }
-
-    private async void GoToDisplayRecipes(object sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("//display-recipes");
-    }
+        => await Shell.Current.GoToAsync("//recipes");
 }

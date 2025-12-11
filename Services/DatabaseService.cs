@@ -33,8 +33,11 @@ public class DatabaseService
 
     public SQLiteAsyncConnection Connection => _db;
 
+<<<<<<< HEAD
     // --- helper methods for users ---
 
+=======
+>>>>>>> 5cb21e2b2734e3de789230fd3a835b190378ffa8
     public Task<User?> GetUserByIdAsync(int id)
     {
         return _db.Table<User>().FirstOrDefaultAsync(u => u.Id == id);
@@ -44,9 +47,12 @@ public class DatabaseService
     {
         return _db.Table<User>().FirstOrDefaultAsync(u => u.Username == username);
     }
+<<<<<<< HEAD
 
     public Task<int> GetUsersCountAsync()
     {
         return _db.Table<User>().CountAsync();
     }
+=======
+>>>>>>> 5cb21e2b2734e3de789230fd3a835b190378ffa8
 }
