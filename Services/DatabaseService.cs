@@ -16,10 +16,13 @@ public class DatabaseService
         _db.CreateTableAsync<RecipeIngredient>().Wait();
         _db.CreateTableAsync<User>().Wait();
 
-        // Ensure IsAdmin column exists (safety for older DBs)
+        // Ensure IsAdmin column exists
         try
         {
-            var check = _db.ExecuteScalarAsync<int>("SELECT COUNT(1) FROM sqlite_master WHERE tbl_name = 'User' AND sql LIKE '%IsAdmin%'").Result;
+            var check = _db.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM sqlite_master WHERE tbl_name = 'User' AND sql LIKE '%IsAdmin%'"
+            ).Result;
+
             if (check == 0)
             {
                 _db.ExecuteAsync("ALTER TABLE User ADD COLUMN IsAdmin INTEGER DEFAULT 0").Wait();
@@ -27,17 +30,12 @@ public class DatabaseService
         }
         catch
         {
-            // ignore any error (table might be new or column already exists)
+            // ignore, column may already exist
         }
     }
 
     public SQLiteAsyncConnection Connection => _db;
 
-<<<<<<< HEAD
-    // --- helper methods for users ---
-
-=======
->>>>>>> 5cb21e2b2734e3de789230fd3a835b190378ffa8
     public Task<User?> GetUserByIdAsync(int id)
     {
         return _db.Table<User>().FirstOrDefaultAsync(u => u.Id == id);
@@ -47,12 +45,9 @@ public class DatabaseService
     {
         return _db.Table<User>().FirstOrDefaultAsync(u => u.Username == username);
     }
-<<<<<<< HEAD
 
     public Task<int> GetUsersCountAsync()
     {
         return _db.Table<User>().CountAsync();
     }
-=======
->>>>>>> 5cb21e2b2734e3de789230fd3a835b190378ffa8
 }

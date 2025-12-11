@@ -36,7 +36,6 @@ public partial class HomePage : ContentPage
 
         if (user == null)
         {
-            // Ако потребителят е изтрит или има проблем — почистваме
             Preferences.Remove("LoggedUserId");
             UserStatusLabel.Text = "Not logged in";
             LoginButton.IsVisible = true;
@@ -45,6 +44,15 @@ public partial class HomePage : ContentPage
             AdminRecipesButton.IsVisible = false;
             return;
         }
+
+        UserStatusLabel.Text = $"Logged as: {user.Username}";
+        LoginButton.IsVisible = false;
+        LogoutButton.IsVisible = true;
+
+        // admin check
+        AdminIngredientsButton.IsVisible = user.IsAdmin;
+        AdminRecipesButton.IsVisible = user.IsAdmin;
+    }
 
     private async void OpenLogin(object sender, EventArgs e)
         => await Navigation.PushModalAsync(new LoginPopup(_db));
@@ -56,13 +64,15 @@ public partial class HomePage : ContentPage
         await DisplayAlert("Logout", "You are now logged out.", "OK");
     }
 
-    // Навигация: админските страници (админ бутоните отгоре)
     private async void GoToIngredients(object sender, EventArgs e)
-    {
-        // използваме shell route "ingredients" (не забравяй, че IngredientsPage трябва да е достъпна)
-        await Shell.Current.GoToAsync("//ingredients");
-    }
+        => await Shell.Current.GoToAsync("//ingredients");
 
     private async void GoToRecipes(object sender, EventArgs e)
         => await Shell.Current.GoToAsync("//recipes");
+
+    private async void GoToDisplayIngredients(object sender, EventArgs e)
+        => await Shell.Current.GoToAsync("//displayingredients");
+
+    private async void GoToDisplayRecipes(object sender, EventArgs e)
+        => await Shell.Current.GoToAsync("//displayrecipes");
 }
