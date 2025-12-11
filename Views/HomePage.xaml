@@ -4,36 +4,66 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              BackgroundColor="#121212">
 
-    <VerticalStackLayout Padding="30" Spacing="30" VerticalOptions="Center">
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="16" VerticalOptions="Center">
 
-        <Label Text="Hound’s Bite"
-               FontSize="36"
-               FontAttributes="Bold"
-               HorizontalOptions="Center"
-               TextColor="White" />
+            <Label Text="Hound’s Bite"
+                   FontSize="34"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="White" />
 
-        <Label Text="Choose ingredients. Find recipes."
-               HorizontalOptions="Center"
-               FontSize="16"
-               TextColor="LightGray" />
+            <Label x:Name="UserStatusLabel"
+                   Text="Not logged in"
+                   HorizontalOptions="Center"
+                   TextColor="White"
+                   FontSize="14" />
 
-        <Button Text="Ingredients"
-                FontSize="18"
-                Clicked="GoToIngredients"
-                BackgroundColor="#8B0000"
-                TextColor="White" />
+            <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                <Button x:Name="LoginButton"
+                        Text="Login / Register"
+                        Clicked="OpenLogin"
+                        BackgroundColor="#555"
+                        TextColor="White" />
 
-        <Button Text="Recipes"
-                FontSize="18"
-                Clicked="GoToRecipes"
-                BackgroundColor="#444"
-                TextColor="White" />
-        
-        <Button Text="Login / Register"
-                FontSize="18"
-                Clicked="OpenLogin"
-                BackgroundColor="#555"
-                TextColor="White" />
+                <Button x:Name="LogoutButton"
+                        Text="Logout"
+                        Clicked="OnLogoutClicked"
+                        BackgroundColor="#8B0000"
+                        TextColor="White"
+                        IsVisible="False" />
+            </HorizontalStackLayout>
 
-    </VerticalStackLayout>
+            <!-- Admin management buttons (видими само за админ) -->
+            <VerticalStackLayout Spacing="8">
+                <Button x:Name="AdminIngredientsButton"
+                        Text="Manage Ingredients (Admin)"
+                        Clicked="GoToIngredients"
+                        IsVisible="False"
+                        BackgroundColor="#2E8B57"
+                        TextColor="White" />
+
+                <Button x:Name="AdminRecipesButton"
+                        Text="Manage Recipes (Admin)"
+                        Clicked="GoToRecipes"
+                        IsVisible="False"
+                        BackgroundColor="#2E8B57"
+                        TextColor="White" />
+            </VerticalStackLayout>
+
+            <!-- Public display pages (за всички потребители) -->
+            <VerticalStackLayout Spacing="8" Margin="0,20,0,0">
+                <Button Text="View Ingredients"
+                        Clicked="GoToDisplayIngredients"
+                        BackgroundColor="#444"
+                        TextColor="White" />
+
+                <Button Text="View Recipes"
+                        Clicked="GoToDisplayRecipes"
+                        BackgroundColor="#444"
+                        TextColor="White" />
+            </VerticalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

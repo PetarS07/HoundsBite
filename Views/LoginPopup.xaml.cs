@@ -39,6 +39,8 @@ public partial class LoginPopup : ContentPage
 
         Preferences.Set("LoggedUserId", user.Id); // ✅ запазваме кой е логнат
 
+        Preferences.Set("IsAdmin", user.IsAdmin);
+
         await DisplayAlert("Success", $"Welcome, {user.Username}!", "OK");
         await Navigation.PopModalAsync();
     }

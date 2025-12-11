@@ -21,4 +21,7 @@
                   Title="Recipes"
                   ContentTemplate="{DataTemplate views:RecipesPage}" />
 
+    <ShellContent Route="display-ingredients" ContentTemplate="{DataTemplate views:IngredientsPage}" />
+    <ShellContent Route="display-recipes" ContentTemplate="{DataTemplate views:RecipesPage}" />
+
 </Shell>

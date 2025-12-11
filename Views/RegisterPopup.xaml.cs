@@ -1,4 +1,4 @@
-using HoundsBite.Models;
+﻿using HoundsBite.Models;
 using HoundsBite.Services;
 
 namespace HoundsBite.Views;
@@ -12,9 +12,6 @@ public partial class RegisterPopup : ContentPage
         InitializeComponent();
         _db = db;
     }
-
-    private async void OnCloseClicked(object sender, EventArgs e)
-        => await Navigation.PopModalAsync();
 
     private async void OnRegisterClicked(object sender, EventArgs e)
     {
@@ -36,13 +33,22 @@ public partial class RegisterPopup : ContentPage
             return;
         }
 
-        await _db.Connection.InsertAsync(new User
+        // Check if there are any users in the DB — if none, this will be the first (make admin)
+        var usersCount = await _db.Connection.Table<User>().CountAsync();
+        var newUser = new User
         {
             Username = username,
-            Password = password
-        });
+            Password = password,
+            IsAdmin = usersCount == 0 // първият става админ
+        };
 
-        await DisplayAlert("Success", "Account created!", "OK");
+        await _db.Connection.InsertAsync(newUser);
+
+        await DisplayAlert("Success", usersCount == 0 ? "Account created. You are the admin." : "Account created!", "OK");
+        await Navigation.PopModalAsync();
+    }
+    private async void OnCloseClicked(object sender, EventArgs e)
+    {
         await Navigation.PopModalAsync();
     }
 }
