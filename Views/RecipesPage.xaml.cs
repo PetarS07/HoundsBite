@@ -51,7 +51,7 @@ public partial class RecipesPage : ContentPage
             .FirstAsync(r => r.Id == display.Id);
 
         RecipeName.Text = _editingRecipe.Name;
-        RecipeType.Text = _editingRecipe.Type;
+        RecipeType.SelectedItem = _editingRecipe.Type;
         RecipeDesc.Text = _editingRecipe.Description;
 
         // Load ingredient links
@@ -73,8 +73,9 @@ public partial class RecipesPage : ContentPage
             var newRecipe = new Recipe
             {
                 Name = RecipeName.Text,
-                Type = RecipeType.Text,
-                Description = RecipeDesc.Text
+                Type = RecipeType.SelectedItem?.ToString() ?? "Other",
+                Description = RecipeDesc.Text,
+                UserId = Preferences.Get("LoggedUserId", 0)
             };
 
             await _db.Connection.InsertAsync(newRecipe);
@@ -83,7 +84,7 @@ public partial class RecipesPage : ContentPage
         else
         {
             _editingRecipe.Name = RecipeName.Text;
-            _editingRecipe.Type = RecipeType.Text;
+            _editingRecipe.Type = RecipeType.SelectedItem?.ToString() ?? "Other";
             _editingRecipe.Description = RecipeDesc.Text;
 
             await _db.Connection.UpdateAsync(_editingRecipe);
@@ -114,7 +115,7 @@ public partial class RecipesPage : ContentPage
     private void ClearRecipeForm()
     {
         RecipeName.Text = "";
-        RecipeType.Text = "";
+        RecipeType.SelectedIndex = -1;
         RecipeDesc.Text = "";
 
         foreach (var item in _ingredientChecks)

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="HoundsBite.Views.DisplayIngredientsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Ingredients List">
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="24">
+            
+            <Label Text="Available Ingredients" 
+                   Style="{StaticResource HeaderLabel}"
+                   HorizontalOptions="Center" />
+            
+            <Label Text="Select what you have in your kitchen" 
+                   TextColor="{StaticResource TextSecondary}"
+                   HorizontalOptions="Center" 
+                   Margin="0,-16,0,0"/>
+
+            <CollectionView x:Name="IngredientList">
+                <CollectionView.ItemsLayout>
+                    <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="12" VerticalItemSpacing="12" />
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CardView}" Padding="12">
+                            <HorizontalStackLayout Spacing="12">
+                                <CheckBox x:Name="IngredientCheckBox"
+                                      IsChecked="{Binding IsSelected}"
+                                      IsVisible="{Binding IsLoggedIn}"
+                                      VerticalOptions="Center"
+                                      CheckedChanged="OnIngredientCheckedChanged"/>
+                                <Label Text="{Binding Name}" 
+                                       VerticalOptions="Center" 
+                                       Style="{StaticResource CardTitle}"
+                                       FontSize="16"/>
+                            </HorizontalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

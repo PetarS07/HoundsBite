@@ -27,8 +27,8 @@ public partial class HomePage : ContentPage
             UserStatusLabel.Text = "Not logged in";
             LoginButton.IsVisible = true;
             LogoutButton.IsVisible = false;
-            AdminIngredientsButton.IsVisible = false;
-            AdminRecipesButton.IsVisible = false;
+            AdminIngredientsCard.IsVisible = false;
+            AdminRecipesCard.IsVisible = false;
             return;
         }
 
@@ -40,8 +40,8 @@ public partial class HomePage : ContentPage
             UserStatusLabel.Text = "Not logged in";
             LoginButton.IsVisible = true;
             LogoutButton.IsVisible = false;
-            AdminIngredientsButton.IsVisible = false;
-            AdminRecipesButton.IsVisible = false;
+            AdminIngredientsCard.IsVisible = false;
+            AdminRecipesCard.IsVisible = false;
             return;
         }
 
@@ -50,8 +50,11 @@ public partial class HomePage : ContentPage
         LogoutButton.IsVisible = true;
 
         // admin check
-        AdminIngredientsButton.IsVisible = user.IsAdmin;
-        AdminRecipesButton.IsVisible = user.IsAdmin;
+        AdminIngredientsCard.IsVisible = user.IsAdmin;
+        AdminRecipesCard.IsVisible = user.IsAdmin;
+        
+        // Show ingredients page for logged users
+        ViewIngredientsButton.IsVisible = true;
     }
 
     private async void OpenLogin(object sender, EventArgs e)
@@ -71,8 +74,8 @@ public partial class HomePage : ContentPage
         => await Shell.Current.GoToAsync("//recipes");
 
     private async void GoToDisplayIngredients(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//displayingredients");
+        => await Shell.Current.GoToAsync("//display-ingredients");
 
     private async void GoToDisplayRecipes(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//displayrecipes");
+        => await Shell.Current.GoToAsync("//display-recipes");
 }

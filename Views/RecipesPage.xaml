@@ -8,7 +8,14 @@
         <VerticalStackLayout Padding="16" Spacing="16">
 
             <Entry x:Name="RecipeName" Placeholder="Recipe name" />
-            <Entry x:Name="RecipeType" Placeholder="Type (Breakfast/Lunch/Dinner)" />
+            <Picker x:Name="RecipeType" Title="Select Type">
+                <Picker.Items>
+                    <x:String>Breakfast</x:String>
+                    <x:String>Lunch</x:String>
+                    <x:String>Dinner</x:String>
+                    <x:String>Other</x:String>
+                </Picker.Items>
+            </Picker>
             <Editor x:Name="RecipeDesc" Placeholder="Description" />
 
             <Label Text="Select ingredients:" FontAttributes="Bold" />

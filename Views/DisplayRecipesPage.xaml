@@ -1,0 +1,78 @@
+<ContentPage x:Class="HoundsBite.Views.DisplayRecipesPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Recipes List">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="24">
+            
+            <Label Text="Our Recipes" 
+                   Style="{StaticResource HeaderLabel}"
+                   HorizontalOptions="Center" />
+
+            <!-- Filters Section -->
+            <Border Style="{StaticResource CardView}" Padding="16">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="Filters" Style="{StaticResource CardTitle}" />
+                    
+                    <HorizontalStackLayout x:Name="FilterToggleContainer" 
+                                           Spacing="16"
+                                           IsVisible="False">
+                        <Switch x:Name="FilterToggle" 
+                                Toggled="OnFilterToggled" />
+                        <Label Text="Only show recipes I can make" 
+                               VerticalOptions="Center" 
+                               TextColor="{StaticResource TextSecondary}"/>
+                    </HorizontalStackLayout>
+
+                    <Grid ColumnDefinitions="Auto, *" ColumnSpacing="12">
+                        <Label Text="Category:" VerticalOptions="Center" TextColor="{StaticResource TextSecondary}"/>
+                        <Picker Grid.Column="1" 
+                                x:Name="CategoryFilter" 
+                                SelectedIndexChanged="OnCategoryFilterChanged">
+                            <Picker.Items>
+                                <x:String>All</x:String>
+                                <x:String>Breakfast</x:String>
+                                <x:String>Lunch</x:String>
+                                <x:String>Dinner</x:String>
+                                <x:String>Other</x:String>
+                            </Picker.Items>
+                        </Picker>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Recipes List -->
+            <CollectionView x:Name="RecipeList">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="16"/>
+                </CollectionView.ItemsLayout>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CardView}">
+                            <VerticalStackLayout Spacing="12">
+                                <Grid ColumnDefinitions="*, Auto">
+                                    <Label Grid.Column="0" Text="{Binding Name}" Style="{StaticResource CardTitle}" FontSize="20"/>
+                                    <!-- Tag for Type -->
+                                    <Border Grid.Column="1" Style="{StaticResource ChipView}" BackgroundColor="{StaticResource PrimaryDark}">
+                                        <Label Text="{Binding Type}" TextColor="White" FontSize="12" FontAttributes="Bold"/>
+                                    </Border>
+                                </Grid>
+                                
+                                <Label Text="{Binding Description}" Style="{StaticResource CardSubtitle}" />
+                                
+                                <BoxView HeightRequest="1" Color="{StaticResource CardBackgroundLight}" />
+                                
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="REQUIRED INGREDIENTS" FontSize="10" TextColor="{StaticResource TextTertiary}" FontAttributes="Bold"/>
+                                    <Label Text="{Binding IngredientNames}" TextColor="{StaticResource TextSecondary}" />
+                                </VerticalStackLayout>
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

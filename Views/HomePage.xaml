@@ -2,67 +2,120 @@
 <ContentPage x:Class="HoundsBite.Views.HomePage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             BackgroundColor="#121212">
+             Title="Dashboard">
 
     <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="16">
+        <VerticalStackLayout Padding="24" Spacing="24">
 
-            <Label Text="Hound’s Bite"
-                   FontSize="34"
-                   FontAttributes="Bold"
-                   HorizontalOptions="Center"
-                   TextColor="White" />
+            <!-- Hero Section -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="Welcome to" 
+                       FontSize="16" 
+                       TextColor="{StaticResource TextSecondary}" />
+                <Label Text="Hound’s Bite"
+                       Style="{StaticResource HeaderLabel}"
+                       TextColor="{StaticResource Primary}" />
+                <Label x:Name="UserStatusLabel"
+                       Text="Not logged in"
+                       TextColor="{StaticResource TextSecondary}"
+                       FontSize="14" />
+            </VerticalStackLayout>
 
-            <Label x:Name="UserStatusLabel"
-                   Text="Not logged in"
-                   HorizontalOptions="Center"
-                   TextColor="White"
-                   FontSize="14" />
-
-            <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+            <!-- Auth Actions -->
+            <HorizontalStackLayout Spacing="12">
                 <Button x:Name="LoginButton"
                         Text="Login / Register"
                         Clicked="OpenLogin"
-                        BackgroundColor="#555"
-                        TextColor="White" />
+                        HorizontalOptions="Start" />
 
                 <Button x:Name="LogoutButton"
                         Text="Logout"
                         Clicked="OnLogoutClicked"
-                        BackgroundColor="#8B0000"
-                        TextColor="White"
-                        IsVisible="False" />
+                        Style="{StaticResource SecondaryButton}"
+                        IsVisible="False"
+                        HorizontalOptions="Start" />
             </HorizontalStackLayout>
 
-            <!-- Admin-only pages -->
-            <VerticalStackLayout Spacing="8" Margin="0,20,0,0">
-                <Button x:Name="AdminIngredientsButton"
-                        Text="Manage Ingredients (Admin)"
-                        Clicked="GoToIngredients"
-                        BackgroundColor="#2E8B57"
-                        TextColor="White"
-                        IsVisible="False" />
+            <!-- Dashboard Grid -->
+            <Label Text="Quick Access" 
+                   Style="{StaticResource CardTitle}" 
+                   Margin="0,10,0,0" />
 
-                <Button x:Name="AdminRecipesButton"
-                        Text="Manage Recipes (Admin)"
-                        Clicked="GoToRecipes"
-                        BackgroundColor="#2E8B57"
-                        TextColor="White"
-                        IsVisible="False" />
-            </VerticalStackLayout>
+            <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*,*" RowSpacing="16" ColumnSpacing="16">
+                
+                <!-- Ingredients Card -->
+                <Border Grid.Row="0" Grid.Column="0" 
+                        Style="{StaticResource CardView}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="GoToDisplayIngredients" />
+                    </Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="🥕" FontSize="32" HorizontalOptions="Center"/>
+                        <Label Text="Ingredients" Style="{StaticResource CardTitle}" HorizontalOptions="Center"/>
+                        <Label Text="View inventory" Style="{StaticResource CardSubtitle}" HorizontalOptions="Center"/>
+                        <Button x:Name="ViewIngredientsButton"
+                                Text="Open"
+                                Clicked="GoToDisplayIngredients"
+                                HeightRequest="36"
+                                FontSize="12"
+                                Margin="0,8,0,0"
+                                IsVisible="False"/>
+                    </VerticalStackLayout>
+                </Border>
 
-            <!-- Public pages -->
-            <VerticalStackLayout Spacing="8" Margin="0,20,0,0">
-                <Button Text="View Ingredients"
-                        Clicked="GoToDisplayIngredients"
-                        BackgroundColor="#444"
-                        TextColor="White" />
+                <!-- Recipes Card -->
+                <Border Grid.Row="0" Grid.Column="1" 
+                        Style="{StaticResource CardView}">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="GoToDisplayRecipes" />
+                    </Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="📖" FontSize="32" HorizontalOptions="Center"/>
+                        <Label Text="Recipes" Style="{StaticResource CardTitle}" HorizontalOptions="Center"/>
+                        <Label Text="Make requests" Style="{StaticResource CardSubtitle}" HorizontalOptions="Center"/>
+                        <Button Text="Open"
+                                Clicked="GoToDisplayRecipes"
+                                HeightRequest="36"
+                                FontSize="12"
+                                Margin="0,8,0,0"/>
+                    </VerticalStackLayout>
+                </Border>
 
-                <Button Text="View Recipes"
-                        Clicked="GoToDisplayRecipes"
-                        BackgroundColor="#444"
-                        TextColor="White" />
-            </VerticalStackLayout>
+                <!-- Admin: Manage Ingredients -->
+                <Border Grid.Row="1" Grid.Column="0" 
+                        x:Name="AdminIngredientsCard"
+                        Style="{StaticResource CardView}"
+                        IsVisible="False"
+                        Stroke="{StaticResource Secondary}"
+                        StrokeThickness="1">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="GoToIngredients" />
+                    </Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="⚙️" FontSize="32" HorizontalOptions="Center"/>
+                        <Label Text="Manage Ing." Style="{StaticResource CardTitle}" HorizontalOptions="Center" FontSize="14"/>
+                        <Label Text="Admin Only" Style="{StaticResource CardSubtitle}" HorizontalOptions="Center" TextColor="{StaticResource Secondary}"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- Admin: Manage Recipes -->
+                <Border Grid.Row="1" Grid.Column="1" 
+                        x:Name="AdminRecipesCard"
+                        Style="{StaticResource CardView}"
+                        IsVisible="False"
+                        Stroke="{StaticResource Secondary}"
+                        StrokeThickness="1">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="GoToRecipes" />
+                    </Border.GestureRecognizers>
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="⚙️" FontSize="32" HorizontalOptions="Center"/>
+                        <Label Text="Manage Rec." Style="{StaticResource CardTitle}" HorizontalOptions="Center" FontSize="14"/>
+                        <Label Text="Admin Only" Style="{StaticResource CardSubtitle}" HorizontalOptions="Center" TextColor="{StaticResource Secondary}"/>
+                    </VerticalStackLayout>
+                </Border>
+
+            </Grid>
 
         </VerticalStackLayout>
     </ScrollView>
