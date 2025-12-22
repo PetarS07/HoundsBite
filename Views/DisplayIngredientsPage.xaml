@@ -6,14 +6,31 @@
     <ScrollView>
         <VerticalStackLayout Padding="24" Spacing="24">
             
-            <Label Text="Available Ingredients" 
-                   Style="{StaticResource HeaderLabel}"
-                   HorizontalOptions="Center" />
+            <!-- Header -->
+            <!-- Header -->
+            <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,8">
+                <Label Text="Kitchen Inventory" 
+                       Style="{StaticResource HeaderLabel}"
+                       VerticalOptions="Center"/>
+                <Button Text="Back to Home"
+                        Clicked="OnBackClicked"
+                        Grid.Column="1"
+                        HeightRequest="36"
+                        FontSize="12"
+                        VerticalOptions="Center"/>
+            </Grid>
             
             <Label Text="Select what you have in your kitchen" 
                    TextColor="{StaticResource TextSecondary}"
-                   HorizontalOptions="Center" 
-                   Margin="0,-16,0,0"/>
+                   Margin="0,-8,0,16"/>
+
+            <!-- Search Bar -->
+            <Border Style="{StaticResource CardView}" Padding="0" Margin="0,0,0,16">
+                <SearchBar x:Name="SearchBar" 
+                          Placeholder="Search ingredients..." 
+                          TextChanged="OnSearchTextChanged"
+                          BackgroundColor="Transparent"/>
+            </Border>
 
             <CollectionView x:Name="IngredientList">
                 <CollectionView.ItemsLayout>
@@ -21,18 +38,22 @@
                 </CollectionView.ItemsLayout>
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <Border Style="{StaticResource CardView}" Padding="12">
-                            <HorizontalStackLayout Spacing="12">
-                                <CheckBox x:Name="IngredientCheckBox"
-                                      IsChecked="{Binding IsSelected}"
-                                      IsVisible="{Binding IsLoggedIn}"
-                                      VerticalOptions="Center"
-                                      CheckedChanged="OnIngredientCheckedChanged"/>
-                                <Label Text="{Binding Name}" 
-                                       VerticalOptions="Center" 
-                                       Style="{StaticResource CardTitle}"
-                                       FontSize="16"/>
-                            </HorizontalStackLayout>
+                        <Border Style="{StaticResource CardView}" Padding="16" HeightRequest="100">
+                            <Grid RowDefinitions="*, Auto">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="{Binding Name}" 
+                                           Style="{StaticResource CardTitle}"
+                                           LineBreakMode="TailTruncation"
+                                           VerticalOptions="Center"/>
+                                </VerticalStackLayout>
+                                
+                                <HorizontalStackLayout Grid.Row="1" HorizontalOptions="End">
+                                    <CheckBox IsChecked="{Binding IsSelected}"
+                                              IsVisible="{Binding IsLoggedIn}"
+                                              CheckedChanged="OnIngredientCheckedChanged"
+                                              Color="{StaticResource Primary}"/>
+                                </HorizontalStackLayout>
+                            </Grid>
                         </Border>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

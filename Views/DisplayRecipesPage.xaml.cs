@@ -8,6 +8,7 @@ public partial class DisplayRecipesPage : ContentPage
     private readonly DatabaseService _db;
     private bool _filterActive = false;
     private int _currentUserId = 0;
+    private string _searchText = "";
 
     public DisplayRecipesPage(DatabaseService db)
     {
@@ -30,6 +31,11 @@ public partial class DisplayRecipesPage : ContentPage
         }
         
         await LoadRecipes();
+    }
+
+    private async void OnBackClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//home");
     }
 
     private async void OnFilterToggled(object sender, ToggledEventArgs e)
@@ -100,6 +106,13 @@ public partial class DisplayRecipesPage : ContentPage
             filteredRecipes = filteredRecipes.Where(r => r.Type == selectedCategory);
         }
 
+        // Filter by search text
+        if (!string.IsNullOrWhiteSpace(_searchText))
+        {
+            filteredRecipes = filteredRecipes.Where(r => 
+                r.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+        }
+
         var displayList = filteredRecipes.Select(r =>
         {
             var names = recipeIngredients
@@ -108,13 +121,22 @@ public partial class DisplayRecipesPage : ContentPage
                     ? name
                     : "(missing ingredient)");
 
+            string icon = r.Type switch
+            {
+                "Breakfast" => "🍳",
+                "Lunch" => "🍔",
+                "Dinner" => "🍽️",
+                _ => "🍲"
+            };
+
             return new RecipeDisplay
             {
                 Id = r.Id,
                 Name = r.Name,
                 Type = r.Type,
                 Description = r.Description,
-                IngredientNames = string.Join(", ", names)
+                IngredientNames = string.Join(", ", names),
+                Icon = icon
             };
         }).ToList();
 
@@ -127,5 +149,17 @@ public partial class DisplayRecipesPage : ContentPage
                 "No recipes can be made with your current ingredients. Try adding more ingredients to your collection.", 
                 "OK");
         }
+    }
+
+    private async void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+    {
+        _searchText = e.NewTextValue ?? "";
+        await LoadRecipes();
+    }
+
+    public class RecipeDisplay : Recipe
+    {
+        public string IngredientNames { get; set; }
+        public string Icon { get; set; }
     }
 }

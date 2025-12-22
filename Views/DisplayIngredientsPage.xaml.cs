@@ -7,6 +7,7 @@ public partial class DisplayIngredientsPage : ContentPage
 {
     private readonly DatabaseService _db;
     public ObservableCollection<IngredientCheckModel> Ingredients { get; set; } = new();
+    private List<IngredientCheckModel> AllIngredients { get; set; } = new();
     
     private int _currentUserId = 0;
 
@@ -34,6 +35,7 @@ public partial class DisplayIngredientsPage : ContentPage
     private async Task LoadIngredients()
     {
         Ingredients.Clear();
+        AllIngredients.Clear();
         var ingredients = await _db.Connection.Table<Models.Ingredient>().ToListAsync();
         
         // Check if user is logged in
@@ -49,14 +51,37 @@ public partial class DisplayIngredientsPage : ContentPage
         
         foreach (var ingredient in ingredients)
         {
-            Ingredients.Add(new IngredientCheckModel
+            var item = new IngredientCheckModel
             {
                 Id = ingredient.Id,
                 Name = ingredient.Name,
                 IsSelected = userIngredientIds.Contains(ingredient.Id),
                 IsLoggedIn = isLoggedIn
-            });
+            };
+            AllIngredients.Add(item);
+            Ingredients.Add(item);
         }
+    }
+
+    private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
+    {
+        var searchText = e.NewTextValue?.ToLower() ?? "";
+        
+        Ingredients.Clear();
+        
+        var filtered = string.IsNullOrWhiteSpace(searchText)
+            ? AllIngredients
+            : AllIngredients.Where(i => i.Name.ToLower().Contains(searchText));
+        
+        foreach (var item in filtered)
+        {
+            Ingredients.Add(item);
+        }
+    }
+
+    private async void OnBackClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//home");
     }
 
     private async void OnIngredientCheckedChanged(object sender, CheckedChangedEventArgs e)

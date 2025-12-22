@@ -6,6 +6,25 @@
 
     <VerticalStackLayout Padding="16" Spacing="16">
 
+        <!-- Header -->
+        <Grid ColumnDefinitions="Auto, *" Margin="0,0,0,10">
+            <Button Text="&lt; Back" 
+                    Clicked="OnBackClicked"
+                    Style="{StaticResource SecondaryButton}"
+                    HeightRequest="36"
+                    FontSize="12"
+                    HorizontalOptions="Start" 
+                    VerticalOptions="Center" />
+
+            <Label Text="Manage Ingredients" 
+                   Style="{StaticResource HeaderLabel}"
+                   FontSize="20"
+                   Grid.Column="1"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"
+                   Margin="-60,0,0,0"/>
+        </Grid>
+
         <Entry x:Name="IngredientEntry" Placeholder="Ingredient name" />
         <Button Text="Add" Clicked="OnAddClicked" />
 

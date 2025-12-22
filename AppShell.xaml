@@ -4,24 +4,32 @@
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        xmlns:views="clr-namespace:HoundsBite.Views"
        BackgroundColor="#121212"
-       ForegroundColor="White">
+       ForegroundColor="White"
+       Shell.FlyoutBehavior="Disabled"
+       Shell.NavBarIsVisible="False">
 
     
-    <ShellContent Route="home"
-                  Title="Home"
-                  ContentTemplate="{DataTemplate views:HomePage}" />
+    <TabBar>
+        <Tab Title="Home">
+            <ShellContent Route="home" ContentTemplate="{DataTemplate views:HomePage}" />
+        </Tab>
+        <Tab Title="Ingredients" x:Name="IngredientsTab">
+            <ShellContent Route="ingredients" ContentTemplate="{DataTemplate views:DisplayIngredientsPage}" />
+        </Tab>
+        <Tab Title="Recipes">
+            <ShellContent Route="recipes" ContentTemplate="{DataTemplate views:DisplayRecipesPage}" />
+        </Tab>
+        <Tab Title="Login" x:Name="UserTab">
+            <ShellContent Route="user" ContentTemplate="{DataTemplate views:UserPage}" />
+        </Tab>
+    </TabBar>
 
-    
-    <ShellContent Route="ingredients"
-                  Title="Ingredients"
-                  ContentTemplate="{DataTemplate views:IngredientsPage}" />
-
-     
-    <ShellContent Route="recipes"
-                  Title="Recipes"
-                  ContentTemplate="{DataTemplate views:RecipesPage}" />
-
+    <!-- Display Routes -->
     <ShellContent Route="display-ingredients" ContentTemplate="{DataTemplate views:DisplayIngredientsPage}" />
     <ShellContent Route="display-recipes" ContentTemplate="{DataTemplate views:DisplayRecipesPage}" />
+    
+    <!-- Admin Routes -->
+    <ShellContent Route="admin-ingredients" ContentTemplate="{DataTemplate views:IngredientsPage}" />
+    <ShellContent Route="admin-recipes" ContentTemplate="{DataTemplate views:RecipesPage}" />
 
 </Shell>

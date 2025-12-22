@@ -19,33 +19,31 @@
                        Text="Not logged in"
                        TextColor="{StaticResource TextSecondary}"
                        FontSize="14" />
+                <Button x:Name="LoginButton"
+                        Text="Login"
+                        Clicked="OnLoginClicked"
+                        HorizontalOptions="Start"
+                        HeightRequest="40"
+                        WidthRequest="100"
+                        IsVisible="False"
+                        Margin="0,8,0,0"/>
             </VerticalStackLayout>
 
-            <!-- Auth Actions -->
-            <HorizontalStackLayout Spacing="12">
-                <Button x:Name="LoginButton"
-                        Text="Login / Register"
-                        Clicked="OpenLogin"
-                        HorizontalOptions="Start" />
-
-                <Button x:Name="LogoutButton"
-                        Text="Logout"
-                        Clicked="OnLogoutClicked"
-                        Style="{StaticResource SecondaryButton}"
-                        IsVisible="False"
-                        HorizontalOptions="Start" />
-            </HorizontalStackLayout>
+            <!-- User Status (Simplified for visibility only) -->
+            <!-- User Status removed -->
 
             <!-- Dashboard Grid -->
             <Label Text="Quick Access" 
                    Style="{StaticResource CardTitle}" 
                    Margin="0,10,0,0" />
 
-            <Grid RowDefinitions="Auto, Auto" ColumnDefinitions="*,*" RowSpacing="16" ColumnSpacing="16">
+            <FlexLayout Wrap="Wrap" JustifyContent="SpaceBetween" AlignItems="Start">
                 
                 <!-- Ingredients Card -->
-                <Border Grid.Row="0" Grid.Column="0" 
-                        Style="{StaticResource CardView}">
+                <Border x:Name="IngredientsCard"
+                        Style="{StaticResource CardView}"
+                        FlexLayout.Basis="48%"
+                        Margin="0,0,0,16">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="GoToDisplayIngredients" />
                     </Border.GestureRecognizers>
@@ -64,8 +62,9 @@
                 </Border>
 
                 <!-- Recipes Card -->
-                <Border Grid.Row="0" Grid.Column="1" 
-                        Style="{StaticResource CardView}">
+                <Border Style="{StaticResource CardView}"
+                        FlexLayout.Basis="48%"
+                        Margin="0,0,0,16">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="GoToDisplayRecipes" />
                     </Border.GestureRecognizers>
@@ -77,17 +76,19 @@
                                 Clicked="GoToDisplayRecipes"
                                 HeightRequest="36"
                                 FontSize="12"
-                                Margin="0,8,0,0"/>
+                                Margin="0,8,0,0"
+                                IsVisible="False" />
                     </VerticalStackLayout>
                 </Border>
 
                 <!-- Admin: Manage Ingredients -->
-                <Border Grid.Row="1" Grid.Column="0" 
-                        x:Name="AdminIngredientsCard"
+                <Border x:Name="AdminIngredientsCard"
                         Style="{StaticResource CardView}"
                         IsVisible="False"
                         Stroke="{StaticResource Secondary}"
-                        StrokeThickness="1">
+                        StrokeThickness="1"
+                        FlexLayout.Basis="48%"
+                        Margin="0,0,0,16">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="GoToIngredients" />
                     </Border.GestureRecognizers>
@@ -99,12 +100,13 @@
                 </Border>
 
                 <!-- Admin: Manage Recipes -->
-                <Border Grid.Row="1" Grid.Column="1" 
-                        x:Name="AdminRecipesCard"
+                <Border x:Name="AdminRecipesCard"
                         Style="{StaticResource CardView}"
                         IsVisible="False"
                         Stroke="{StaticResource Secondary}"
-                        StrokeThickness="1">
+                        StrokeThickness="1"
+                        FlexLayout.Basis="48%"
+                        Margin="0,0,0,16">
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="GoToRecipes" />
                     </Border.GestureRecognizers>
@@ -115,7 +117,7 @@
                     </VerticalStackLayout>
                 </Border>
 
-            </Grid>
+            </FlexLayout>
 
         </VerticalStackLayout>
     </ScrollView>

@@ -174,4 +174,8 @@ public partial class RecipesPage : ContentPage
 
         await LoadRecipes();
     }
+    private async void OnBackClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//home");
+    }
 }

@@ -24,9 +24,8 @@ public partial class HomePage : ContentPage
 
         if (userId == 0)
         {
-            UserStatusLabel.Text = "Not logged in";
             LoginButton.IsVisible = true;
-            LogoutButton.IsVisible = false;
+            IngredientsCard.IsVisible = false; // Hide for non-users
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
             return;
@@ -37,41 +36,31 @@ public partial class HomePage : ContentPage
         if (user == null)
         {
             Preferences.Remove("LoggedUserId");
-            UserStatusLabel.Text = "Not logged in";
             LoginButton.IsVisible = true;
-            LogoutButton.IsVisible = false;
+            IngredientsCard.IsVisible = false; // Hide for non-users
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
             return;
         }
 
-        UserStatusLabel.Text = $"Logged as: {user.Username}";
         LoginButton.IsVisible = false;
-        LogoutButton.IsVisible = true;
+        
+        // Show ingredients card for logged users
+        IngredientsCard.IsVisible = true;
 
         // admin check
         AdminIngredientsCard.IsVisible = user.IsAdmin;
         AdminRecipesCard.IsVisible = user.IsAdmin;
-        
-        // Show ingredients page for logged users
-        ViewIngredientsButton.IsVisible = true;
     }
 
-    private async void OpenLogin(object sender, EventArgs e)
-        => await Navigation.PushModalAsync(new LoginPopup(_db));
-
-    private async void OnLogoutClicked(object sender, EventArgs e)
-    {
-        Preferences.Remove("LoggedUserId");
-        await RefreshLoginStatus();
-        await DisplayAlert("Logout", "You are now logged out.", "OK");
-    }
+    private async void OnLoginClicked(object sender, EventArgs e)
+        => await Shell.Current.GoToAsync("//user");
 
     private async void GoToIngredients(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//ingredients");
+        => await Shell.Current.GoToAsync("//admin-ingredients");
 
     private async void GoToRecipes(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//recipes");
+        => await Shell.Current.GoToAsync("//admin-recipes");
 
     private async void GoToDisplayIngredients(object sender, EventArgs e)
         => await Shell.Current.GoToAsync("//display-ingredients");

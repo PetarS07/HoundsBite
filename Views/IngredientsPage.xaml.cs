@@ -72,4 +72,8 @@ public partial class IngredientsPage : ContentPage
 
         IngredientList.ItemsSource = await _db.Connection.Table<Ingredient>().ToListAsync();
     }
+    private async void OnBackClicked(object sender, EventArgs e)
+    {
+        await Shell.Current.GoToAsync("//home");
+    }
 }
