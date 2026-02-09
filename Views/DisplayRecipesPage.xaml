@@ -71,6 +71,9 @@
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
                         <Border Style="{StaticResource CardView}" Padding="16" HeightRequest="120">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnRecipeTapped" CommandParameter="{Binding Id}"/>
+                            </Border.GestureRecognizers>
                             <Grid RowDefinitions="*, Auto">
                                 <VerticalStackLayout Spacing="4">
                                     <Label Text="{Binding Name}" 
@@ -84,7 +87,7 @@
                                 </VerticalStackLayout>
                                 
                                 <Label Grid.Row="1" 
-                                       Text="View Details" 
+                                       Text="👉 Tap to view" 
                                        FontSize="10" 
                                        TextColor="{StaticResource TextSecondary}"
                                        HorizontalOptions="End"/>

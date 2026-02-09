@@ -15,14 +15,11 @@
                 <Label Text="Hound’s Bite"
                        Style="{StaticResource HeaderLabel}"
                        TextColor="{StaticResource Primary}" />
-                <Label x:Name="UserStatusLabel"
-                       Text="Not logged in"
-                       TextColor="{StaticResource TextSecondary}"
-                       FontSize="14" />
+
                 <Button x:Name="LoginButton"
                         Text="Login"
                         Clicked="OnLoginClicked"
-                        HorizontalOptions="Start"
+                        HorizontalOptions="End"
                         HeightRequest="40"
                         WidthRequest="100"
                         IsVisible="False"

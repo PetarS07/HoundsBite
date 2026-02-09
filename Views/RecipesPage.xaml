@@ -37,18 +37,64 @@
                     <x:String>Other</x:String>
                 </Picker.Items>
             </Picker>
-            <Editor x:Name="RecipeDesc" Placeholder="Description" />
+            <Editor x:Name="RecipeDesc" Placeholder="Description" HeightRequest="60"/>
+            
+            <!-- New Recipe Detail Fields -->
+            <Editor x:Name="RecipeInstructions" 
+                    Placeholder="Cooking instructions (step-by-step)" 
+                    HeightRequest="100"/>
+            
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Entry x:Name="PrepTimeEntry" 
+                       Placeholder="Prep time (min)" 
+                       Keyboard="Numeric"/>
+                <Entry x:Name="CookTimeEntry" 
+                       Placeholder="Cook time (min)" 
+                       Keyboard="Numeric"
+                       Grid.Column="1"/>
+            </Grid>
+            
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <Entry x:Name="ServingsEntry" 
+                       Placeholder="Servings" 
+                       Keyboard="Numeric"/>
+                <Picker x:Name="DifficultyPicker" 
+                        Title="Difficulty"
+                        Grid.Column="1">
+                    <Picker.Items>
+                        <x:String>Easy</x:String>
+                        <x:String>Medium</x:String>
+                        <x:String>Hard</x:String>
+                    </Picker.Items>
+                </Picker>
+            </Grid>
 
-            <Label Text="Select ingredients:" FontAttributes="Bold" />
+            <Label Text="Select ingredients with quantities:" FontAttributes="Bold" Margin="0,12,0,0"/>
 
-            <!-- List of ingredients with checkboxes -->
+            <!-- Enhanced ingredient selector with amounts and units -->
             <CollectionView x:Name="IngredientSelector">
                 <CollectionView.ItemTemplate>
                     <DataTemplate>
-                        <HorizontalStackLayout>
-                            <CheckBox IsChecked="{Binding IsSelected}" />
-                            <Label Text="{Binding Name}" VerticalOptions="Center" />
-                        </HorizontalStackLayout>
+                        <VerticalStackLayout Padding="8" Spacing="8">
+                            <HorizontalStackLayout>
+                                <CheckBox IsChecked="{Binding IsSelected}" />
+                                <Label Text="{Binding Name}" 
+                                       VerticalOptions="Center" 
+                                       FontAttributes="Bold"/>
+                            </HorizontalStackLayout>
+                            
+                            <!-- Show amount/unit inputs when ingredient is selected -->
+                            <Grid ColumnDefinitions="*,*" 
+                                  ColumnSpacing="8" 
+                                  Margin="32,0,0,0"
+                                  IsVisible="{Binding IsSelected}">
+                                <Entry Placeholder="Amount (e.g., 2)" 
+                                       Text="{Binding Amount}"/>
+                                <Entry Placeholder="Unit (e.g., cups)" 
+                                       Text="{Binding Unit}"
+                                       Grid.Column="1"/>
+                            </Grid>
+                        </VerticalStackLayout>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>

@@ -38,6 +38,32 @@ public class DatabaseService
             {
                 _db.ExecuteAsync("ALTER TABLE Recipe ADD COLUMN UserId INTEGER DEFAULT 0").Wait();
             }
+            
+            // Ensure new Recipe detail columns exist
+            var checkInstructions = _db.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM sqlite_master WHERE tbl_name = 'Recipe' AND sql LIKE '%Instructions%'"
+            ).Result;
+
+            if (checkInstructions == 0)
+            {
+                _db.ExecuteAsync("ALTER TABLE Recipe ADD COLUMN Instructions TEXT DEFAULT ''").Wait();
+                _db.ExecuteAsync("ALTER TABLE Recipe ADD COLUMN PrepTime INTEGER DEFAULT 0").Wait();
+                _db.ExecuteAsync("ALTER TABLE Recipe ADD COLUMN CookTime INTEGER DEFAULT 0").Wait();
+                _db.ExecuteAsync("ALTER TABLE Recipe ADD COLUMN Servings INTEGER DEFAULT 1").Wait();
+                _db.ExecuteAsync("ALTER TABLE Recipe ADD COLUMN Difficulty TEXT DEFAULT 'Medium'").Wait();
+                _db.ExecuteAsync("ALTER TABLE Recipe ADD COLUMN ImagePath TEXT").Wait();
+            }
+            
+            // Ensure RecipeIngredient quantity columns exist
+            var checkAmount = _db.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM sqlite_master WHERE tbl_name = 'RecipeIngredient' AND sql LIKE '%Amount%'"
+            ).Result;
+
+            if (checkAmount == 0)
+            {
+                _db.ExecuteAsync("ALTER TABLE RecipeIngredient ADD COLUMN Amount TEXT DEFAULT ''").Wait();
+                _db.ExecuteAsync("ALTER TABLE RecipeIngredient ADD COLUMN Unit TEXT DEFAULT ''").Wait();
+            }
         }
         catch
         {

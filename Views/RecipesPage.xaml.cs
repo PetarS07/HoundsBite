@@ -13,6 +13,8 @@ public partial class RecipesPage : ContentPage
         public int IngredientId { get; set; }
         public string Name { get; set; }
         public bool IsSelected { get; set; }
+        public string Amount { get; set; }
+        public string Unit { get; set; }
     }
 
     private List<IngredientCheck> _ingredientChecks = new();
@@ -34,7 +36,9 @@ public partial class RecipesPage : ContentPage
         {
             IngredientId = i.Id,
             Name = i.Name,
-            IsSelected = false
+            IsSelected = false,
+            Amount = "",
+            Unit = ""
         }).ToList();
 
         IngredientSelector.ItemsSource = _ingredientChecks;
@@ -52,6 +56,11 @@ public partial class RecipesPage : ContentPage
 
         RecipeName.Text = _editingRecipe.Name;
         RecipeType.SelectedItem = _editingRecipe.Type;
+        RecipeInstructions.Text = _editingRecipe.Instructions;
+        PrepTimeEntry.Text = _editingRecipe.PrepTime.ToString();
+        CookTimeEntry.Text = _editingRecipe.CookTime.ToString();
+        ServingsEntry.Text = _editingRecipe.Servings.ToString();
+        DifficultyPicker.SelectedItem = _editingRecipe.Difficulty ?? "Medium";
         RecipeDesc.Text = _editingRecipe.Description;
 
         // Load ingredient links
@@ -60,7 +69,15 @@ public partial class RecipesPage : ContentPage
             .ToListAsync();
 
         foreach (var box in _ingredientChecks)
-            box.IsSelected = used.Any(u => u.IngredientId == box.IngredientId);
+        {
+            var usedIngredient = used.FirstOrDefault(u => u.IngredientId == box.IngredientId);
+            box.IsSelected = usedIngredient != null;
+            if (usedIngredient != null)
+            {
+                box.Amount = usedIngredient.Amount ?? "";
+                box.Unit = usedIngredient.Unit ?? "";
+            }
+        }
 
         IngredientSelector.ItemsSource = null;
         IngredientSelector.ItemsSource = _ingredientChecks;
@@ -75,7 +92,13 @@ public partial class RecipesPage : ContentPage
                 Name = RecipeName.Text,
                 Type = RecipeType.SelectedItem?.ToString() ?? "Other",
                 Description = RecipeDesc.Text,
-                UserId = Preferences.Get("LoggedUserId", 0)
+                UserId = Preferences.Get("LoggedUserId", 0),
+                Instructions = RecipeInstructions.Text ?? "",
+                PrepTime = int.TryParse(PrepTimeEntry.Text, out var prep) ? prep : 0,
+                CookTime = int.TryParse(CookTimeEntry.Text, out var cook) ? cook : 0,
+                Servings = int.TryParse(ServingsEntry.Text, out var servings) ? servings : 1,
+                Difficulty = DifficultyPicker.SelectedItem?.ToString() ?? "Medium",
+                ImagePath = null
             };
 
             await _db.Connection.InsertAsync(newRecipe);
@@ -86,6 +109,11 @@ public partial class RecipesPage : ContentPage
             _editingRecipe.Name = RecipeName.Text;
             _editingRecipe.Type = RecipeType.SelectedItem?.ToString() ?? "Other";
             _editingRecipe.Description = RecipeDesc.Text;
+            _editingRecipe.Instructions = RecipeInstructions.Text ?? "";
+            _editingRecipe.PrepTime = int.TryParse(PrepTimeEntry.Text, out var prep) ? prep : 0;
+            _editingRecipe.CookTime = int.TryParse(CookTimeEntry.Text, out var cook) ? cook : 0;
+            _editingRecipe.Servings = int.TryParse(ServingsEntry.Text, out var servings) ? servings : 1;
+            _editingRecipe.Difficulty = DifficultyPicker.SelectedItem?.ToString() ?? "Medium";
 
             await _db.Connection.UpdateAsync(_editingRecipe);
         }
@@ -103,7 +131,9 @@ public partial class RecipesPage : ContentPage
             await _db.Connection.InsertAsync(new RecipeIngredient
             {
                 RecipeId = _editingRecipe.Id,
-                IngredientId = ing.IngredientId
+                IngredientId = ing.IngredientId,
+                Amount = ing.Amount ?? "",
+                Unit = ing.Unit ?? ""
             });
         }
 
@@ -117,9 +147,18 @@ public partial class RecipesPage : ContentPage
         RecipeName.Text = "";
         RecipeType.SelectedIndex = -1;
         RecipeDesc.Text = "";
+        RecipeInstructions.Text = "";
+        PrepTimeEntry.Text = "";
+        CookTimeEntry.Text = "";
+        ServingsEntry.Text = "";
+        DifficultyPicker.SelectedIndex = -1;
 
         foreach (var item in _ingredientChecks)
+        {
             item.IsSelected = false;
+            item.Amount = "";
+            item.Unit = "";
+        }
 
         IngredientSelector.ItemsSource = null;
         IngredientSelector.ItemsSource = _ingredientChecks;

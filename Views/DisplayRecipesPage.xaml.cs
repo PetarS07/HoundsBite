@@ -157,6 +157,14 @@ public partial class DisplayRecipesPage : ContentPage
         await LoadRecipes();
     }
 
+    private async void OnRecipeTapped(object sender, TappedEventArgs e)
+    {
+        if (e.Parameter is int recipeId)
+        {
+            await Shell.Current.GoToAsync($"recipe-detail?recipeId={recipeId}");
+        }
+    }
+
     public class RecipeDisplay : Recipe
     {
         public string IngredientNames { get; set; }

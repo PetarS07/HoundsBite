@@ -6,6 +6,9 @@
         {
             InitializeComponent();
             
+            // Register recipe detail route
+            Routing.RegisterRoute("recipe-detail", typeof(Views.RecipeDetailPage));
+            
             // Subscribe to login changes
             MessagingCenter.Subscribe<object>(this, "LoginChanged", (sender) =>
             {
