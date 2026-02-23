@@ -3,12 +3,12 @@
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              Title="Recipes">
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
 
-    <VerticalStackLayout Padding="16" Spacing="16">
-        
-        <!-- Header -->
-        <Grid ColumnDefinitions="Auto, *" Margin="0,0,0,10">
-            <Button Text="&lt; Back" 
+            <!-- Header -->
+            <Grid ColumnDefinitions="Auto, *" Margin="0,0,0,10">
+                <Button Text="&lt; Back" 
                     Clicked="OnBackClicked"
                     Style="{StaticResource SecondaryButton}"
                     HeightRequest="36"
@@ -16,111 +16,112 @@
                     HorizontalOptions="Start" 
                     VerticalOptions="Center" />
 
-            <Label Text="Manage Recipes" 
+                <Label Text="Manage Recipes" 
                    Style="{StaticResource HeaderLabel}"
                    FontSize="20"
                    Grid.Column="1"
                    HorizontalOptions="Center"
                    VerticalOptions="Center"
                    Margin="-60,0,0,0"/>
-        </Grid>
+            </Grid>
 
-        <ScrollView>
-            <VerticalStackLayout Spacing="16">
+            <ScrollView>
+                <VerticalStackLayout Spacing="16">
 
-            <Entry x:Name="RecipeName" Placeholder="Recipe name" />
-            <Picker x:Name="RecipeType" Title="Select Type">
-                <Picker.Items>
-                    <x:String>Breakfast</x:String>
-                    <x:String>Lunch</x:String>
-                    <x:String>Dinner</x:String>
-                    <x:String>Other</x:String>
-                </Picker.Items>
-            </Picker>
-            <Editor x:Name="RecipeDesc" Placeholder="Description" HeightRequest="60"/>
-            
-            <!-- New Recipe Detail Fields -->
-            <Editor x:Name="RecipeInstructions" 
+                    <Entry x:Name="RecipeName" Placeholder="Recipe name" />
+                    <Picker x:Name="RecipeType" Title="Select Type">
+                        <Picker.Items>
+                            <x:String>Breakfast</x:String>
+                            <x:String>Lunch</x:String>
+                            <x:String>Dinner</x:String>
+                            <x:String>Other</x:String>
+                        </Picker.Items>
+                    </Picker>
+                    <Editor x:Name="RecipeDesc" Placeholder="Description" HeightRequest="60"/>
+
+                    <!-- New Recipe Detail Fields -->
+                    <Editor x:Name="RecipeInstructions" 
                     Placeholder="Cooking instructions (step-by-step)" 
                     HeightRequest="100"/>
-            
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Entry x:Name="PrepTimeEntry" 
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Entry x:Name="PrepTimeEntry" 
                        Placeholder="Prep time (min)" 
                        Keyboard="Numeric"/>
-                <Entry x:Name="CookTimeEntry" 
+                        <Entry x:Name="CookTimeEntry" 
                        Placeholder="Cook time (min)" 
                        Keyboard="Numeric"
                        Grid.Column="1"/>
-            </Grid>
-            
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                <Entry x:Name="ServingsEntry" 
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Entry x:Name="ServingsEntry" 
                        Placeholder="Servings" 
                        Keyboard="Numeric"/>
-                <Picker x:Name="DifficultyPicker" 
+                        <Picker x:Name="DifficultyPicker" 
                         Title="Difficulty"
                         Grid.Column="1">
-                    <Picker.Items>
-                        <x:String>Easy</x:String>
-                        <x:String>Medium</x:String>
-                        <x:String>Hard</x:String>
-                    </Picker.Items>
-                </Picker>
-            </Grid>
+                            <Picker.Items>
+                                <x:String>Easy</x:String>
+                                <x:String>Medium</x:String>
+                                <x:String>Hard</x:String>
+                            </Picker.Items>
+                        </Picker>
+                    </Grid>
 
-            <Label Text="Select ingredients with quantities:" FontAttributes="Bold" Margin="0,12,0,0"/>
+                    <Label Text="Select ingredients with quantities:" FontAttributes="Bold" Margin="0,12,0,0"/>
 
-            <!-- Enhanced ingredient selector with amounts and units -->
-            <CollectionView x:Name="IngredientSelector">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <VerticalStackLayout Padding="8" Spacing="8">
-                            <HorizontalStackLayout>
-                                <CheckBox IsChecked="{Binding IsSelected}" />
-                                <Label Text="{Binding Name}" 
+                    <!-- Enhanced ingredient selector with amounts and units -->
+                    <CollectionView x:Name="IngredientSelector">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <VerticalStackLayout Padding="8" Spacing="8">
+                                    <HorizontalStackLayout>
+                                        <CheckBox IsChecked="{Binding IsSelected}" />
+                                        <Label Text="{Binding Name}" 
                                        VerticalOptions="Center" 
                                        FontAttributes="Bold"/>
-                            </HorizontalStackLayout>
-                            
-                            <!-- Show amount/unit inputs when ingredient is selected -->
-                            <Grid ColumnDefinitions="*,*" 
+                                    </HorizontalStackLayout>
+
+                                    <!-- Show amount/unit inputs when ingredient is selected -->
+                                    <Grid ColumnDefinitions="*,*" 
                                   ColumnSpacing="8" 
                                   Margin="32,0,0,0"
                                   IsVisible="{Binding IsSelected}">
-                                <Entry Placeholder="Amount (e.g., 2)" 
+                                        <Entry Placeholder="Amount (e.g., 2)" 
                                        Text="{Binding Amount}"/>
-                                <Entry Placeholder="Unit (e.g., cups)" 
+                                        <Entry Placeholder="Unit (e.g., cups)" 
                                        Text="{Binding Unit}"
                                        Grid.Column="1"/>
-                            </Grid>
-                        </VerticalStackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
 
-            <Button Text="Add Recipe" Clicked="OnAddRecipe" />
+                    <Button Text="Add Recipe" Clicked="OnAddRecipe" />
 
-            <CollectionView x:Name="RecipeList">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <VerticalStackLayout Padding="10">
-                            <Label Text="{Binding Name}" FontAttributes="Bold"/>
-                            <Label Text="{Binding Type}"/>
-                            <Label Text="{Binding Description}"/>
-                            <Label Text="Ingredients:" FontAttributes="Bold"/>
-                            <Label Text="{Binding IngredientNames}"/>
+                    <CollectionView x:Name="RecipeList">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <VerticalStackLayout Padding="10">
+                                    <Label Text="{Binding Name}" FontAttributes="Bold"/>
+                                    <Label Text="{Binding Type}"/>
+                                    <Label Text="{Binding Description}"/>
+                                    <Label Text="Ingredients:" FontAttributes="Bold"/>
+                                    <Label Text="{Binding IngredientNames}"/>
 
-                            <HorizontalStackLayout>
-                                <Button Text="Edit" CommandParameter="{Binding .}" Clicked="OnEditRecipe"/>
-                                <Button Text="Delete" CommandParameter="{Binding .}" Clicked="OnDeleteRecipe"/>
-                            </HorizontalStackLayout>
-                        </VerticalStackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                                    <HorizontalStackLayout>
+                                        <Button Text="Edit" CommandParameter="{Binding .}" Clicked="OnEditRecipe"/>
+                                        <Button Text="Delete" CommandParameter="{Binding .}" Clicked="OnDeleteRecipe"/>
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
 
-            </VerticalStackLayout>
-        </ScrollView>
-    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>
