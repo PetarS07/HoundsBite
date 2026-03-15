@@ -4,12 +4,12 @@ namespace HoundsBite.Views;
 
 public partial class HomePage : ContentPage
 {
-    private readonly DatabaseService _db;
+    private readonly SupabaseService _supa;
 
-    public HomePage(DatabaseService db)
+    public HomePage(SupabaseService supa)
     {
         InitializeComponent();
-        _db = db;
+        _supa = supa;
     }
 
     protected override async void OnAppearing()
@@ -25,30 +25,26 @@ public partial class HomePage : ContentPage
         if (userId == 0)
         {
             LoginButton.IsVisible = true;
-            IngredientsCard.IsVisible = false; // Hide for non-users
+            IngredientsCard.IsVisible = false;
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
             return;
         }
 
-        var user = await _db.GetUserByIdAsync(userId);
+        var user = await _supa.GetUserByIdAsync(userId);
 
         if (user == null)
         {
             Preferences.Remove("LoggedUserId");
             LoginButton.IsVisible = true;
-            IngredientsCard.IsVisible = false; // Hide for non-users
+            IngredientsCard.IsVisible = false;
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
             return;
         }
 
         LoginButton.IsVisible = false;
-        
-        // Show ingredients card for logged users
         IngredientsCard.IsVisible = true;
-
-        // admin check
         AdminIngredientsCard.IsVisible = user.IsAdmin;
         AdminRecipesCard.IsVisible = user.IsAdmin;
     }

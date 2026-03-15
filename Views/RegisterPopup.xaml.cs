@@ -1,54 +1,111 @@
-﻿using HoundsBite.Models;
-using HoundsBite.Services;
+﻿using HoundsBite.Services;
+using System.Text.RegularExpressions;
 
 namespace HoundsBite.Views;
 
 public partial class RegisterPopup : ContentPage
 {
-    private readonly DatabaseService _db;
+    private readonly SupabaseService _supa;
+    private bool _isEmailValid = false;
+    private bool _isPasswordValid = false;
 
-    public RegisterPopup(DatabaseService db)
+    public RegisterPopup(SupabaseService supa)
     {
         InitializeComponent();
-        _db = db;
+        _supa = supa;
+    }
+
+    private void OnEmailTextChanged(object sender, TextChangedEventArgs e)
+    {
+        var email = e.NewTextValue ?? string.Empty;
+        
+        // Standard email Regex
+        string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+        
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            EmailErrorLabel.IsVisible = false;
+            _isEmailValid = false;
+        }
+        else
+        {
+            _isEmailValid = Regex.IsMatch(email, emailPattern);
+            EmailErrorLabel.IsVisible = !_isEmailValid;
+        }
+    }
+
+    private void OnPasswordTextChanged(object sender, TextChangedEventArgs e)
+    {
+        var password = e.NewTextValue ?? string.Empty;
+        
+        bool hasLength = password.Length >= 8;
+        bool hasUpper = password.Any(char.IsUpper);
+        bool hasLower = password.Any(char.IsLower);
+        bool hasNumber = password.Any(char.IsDigit);
+        bool hasSpecial = password.Any(c => !char.IsLetterOrDigit(c));
+
+        ReqLength.TextColor = hasLength ? Colors.Green : Colors.Red;
+        ReqUpper.TextColor = hasUpper ? Colors.Green : Colors.Red;
+        ReqLower.TextColor = hasLower ? Colors.Green : Colors.Red;
+        ReqNumber.TextColor = hasNumber ? Colors.Green : Colors.Red;
+        ReqSpecial.TextColor = hasSpecial ? Colors.Green : Colors.Red;
+
+        _isPasswordValid = hasLength && hasUpper && hasLower && hasNumber && hasSpecial;
+
+        if (!_isPasswordValid && password.Length > 0)
+        {
+            RequirementsPanel.IsVisible = true;
+        }
+    }
+
+    private void OnRequirementsTapped(object sender, TappedEventArgs e)
+    {
+        RequirementsPanel.IsVisible = !RequirementsPanel.IsVisible;
     }
 
     private async void OnRegisterClicked(object sender, EventArgs e)
     {
-        var username = UsernameEntry.Text?.Trim() ?? "";
+        var email = EmailEntry.Text?.Trim() ?? "";
         var password = PasswordEntry.Text?.Trim() ?? "";
 
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
             await DisplayAlert("Error", "All fields are required.", "OK");
             return;
         }
 
-        var exists = await _db.Connection.Table<User>()
-            .FirstOrDefaultAsync(u => u.Username == username);
-
-        if (exists != null)
+        if (!_isEmailValid)
         {
-            await DisplayAlert("Error", "Username already exists.", "OK");
+            await DisplayAlert("Error", "Please enter a valid email address.", "OK");
             return;
         }
 
-        // Check if there are any users in the DB — if none, this will be the first (make admin)
-        var usersCount = await _db.Connection.Table<User>().CountAsync();
-        var newUser = new User
+        if (!_isPasswordValid)
         {
-            Username = username,
-            Password = password,
-            IsAdmin = usersCount == 0 // първият става админ
-        };
+            RequirementsPanel.IsVisible = true;
+            await DisplayAlert("Error", "Password does not meet all requirements.", "OK");
+            return;
+        }
 
-        await _db.Connection.InsertAsync(newUser);
+        // Check if username is taken in Supabase
+        var existing = await _supa.GetUserByUsernameAsync(email);
+        if (existing != null)
+        {
+            await DisplayAlert("Error", "Email already exists.", "OK");
+            return;
+        }
 
-        await DisplayAlert("Success", usersCount == 0 ? "Account created. You are the admin." : "Account created!", "OK");
+        // RegisterUserAsync handles BCrypt hashing and admin-first-user logic
+        var newUser = await _supa.RegisterUserAsync(email, password);
+
+        await DisplayAlert(
+            "Success",
+            newUser.IsAdmin ? "Account created. You are the admin!" : "Account created!",
+            "OK");
+
         await Navigation.PopModalAsync();
     }
+
     private async void OnCloseClicked(object sender, EventArgs e)
-    {
-        await Navigation.PopModalAsync();
-    }
+        => await Navigation.PopModalAsync();
 }

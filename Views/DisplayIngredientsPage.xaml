@@ -2,63 +2,63 @@
 <ContentPage x:Class="HoundsBite.Views.DisplayIngredientsPage"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:HoundsBite.Controls"
              Title="Ingredients List">
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="24">
-            
-            <!-- Header -->
-            <!-- Header -->
-            <Grid ColumnDefinitions="*, Auto" Margin="0,0,0,8">
-                <Label Text="Kitchen Inventory" 
-                       Style="{StaticResource HeaderLabel}"
-                       VerticalOptions="Center"/>
-                <Button Text="Back to Home"
-                        Clicked="OnBackClicked"
-                        Grid.Column="1"
-                        HeightRequest="36"
-                        FontSize="12"
-                        VerticalOptions="Center"/>
-            </Grid>
-            
-            <Label Text="Select what you have in your kitchen" 
-                   TextColor="{StaticResource TextSecondary}"
-                   Margin="0,-8,0,16"/>
 
-            <!-- Search Bar -->
-            <Border Style="{StaticResource CardView}" Padding="0" Margin="0,0,0,16">
-                <SearchBar x:Name="SearchBar" 
-                          Placeholder="Search ingredients..." 
-                          TextChanged="OnSearchTextChanged"
-                          BackgroundColor="Transparent"/>
-            </Border>
+    <Grid RowDefinitions="*, Auto">
 
-            <CollectionView x:Name="IngredientList">
-                <CollectionView.ItemsLayout>
-                    <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="12" VerticalItemSpacing="12" />
-                </CollectionView.ItemsLayout>
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border Style="{StaticResource CardView}" Padding="16" HeightRequest="100">
-                            <Grid RowDefinitions="*, Auto">
-                                <VerticalStackLayout Spacing="4">
-                                    <Label Text="{Binding Name}" 
-                                           Style="{StaticResource CardTitle}"
-                                           LineBreakMode="TailTruncation"
-                                           VerticalOptions="Center"/>
-                                </VerticalStackLayout>
-                                
-                                <HorizontalStackLayout Grid.Row="1" HorizontalOptions="End">
-                                    <CheckBox IsChecked="{Binding IsSelected}"
-                                              IsVisible="{Binding IsLoggedIn}"
-                                              CheckedChanged="OnIngredientCheckedChanged"
-                                              Color="{StaticResource Primary}"/>
-                                </HorizontalStackLayout>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="24,24,24,0" Spacing="24">
 
-        </VerticalStackLayout>
-    </ScrollView>
+                <!-- Header -->
+                <Label Text="Kitchen Inventory"
+                       Style="{StaticResource HeaderLabel}"/>
+
+                <Label Text="Select what you have in your kitchen"
+                       TextColor="{StaticResource TextSecondary}"
+                       Margin="0,-16,0,0"/>
+
+                <!-- Search Bar -->
+                <Border Style="{StaticResource CardView}" Padding="0" Margin="0,0,0,8">
+                    <SearchBar x:Name="SearchBar"
+                               Placeholder="Search ingredients..."
+                               TextChanged="OnSearchTextChanged"
+                               BackgroundColor="Transparent"/>
+                </Border>
+
+                <CollectionView x:Name="IngredientList">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="12" VerticalItemSpacing="12" />
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource CardView}" Padding="16" HeightRequest="100">
+                                <Grid RowDefinitions="*, Auto">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Label Text="{Binding Name}"
+                                               Style="{StaticResource CardTitle}"
+                                               LineBreakMode="TailTruncation"
+                                               VerticalOptions="Center"/>
+                                    </VerticalStackLayout>
+                                    <HorizontalStackLayout Grid.Row="1" HorizontalOptions="End">
+                                        <CheckBox IsChecked="{Binding IsSelected}"
+                                                  IsVisible="{Binding IsLoggedIn}"
+                                                  CheckedChanged="OnIngredientCheckedChanged"
+                                                  Color="{StaticResource Primary}"/>
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Bottom spacing so content clears the NavBar -->
+                <BoxView HeightRequest="90" Color="Transparent"/>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Custom Nav Bar -->
+        <controls:NavBar Grid.Row="1" ActiveTab="Ingredients" Margin="0,-80,0,0"/>
+
+    </Grid>
 </ContentPage>

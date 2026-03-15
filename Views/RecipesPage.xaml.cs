@@ -5,32 +5,31 @@ namespace HoundsBite.Views;
 
 public partial class RecipesPage : ContentPage
 {
-    private readonly DatabaseService _db;
-    private Recipe _editingRecipe = null;
+    private readonly SupabaseService _supa;
+    private Recipe? _editingRecipe = null;
 
     public class IngredientCheck
     {
         public int IngredientId { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public bool IsSelected { get; set; }
-        public string Amount { get; set; }
-        public string Unit { get; set; }
+        public string Amount { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
     }
 
     private List<IngredientCheck> _ingredientChecks = new();
 
-    public RecipesPage(DatabaseService db)
+    public RecipesPage(SupabaseService supa)
     {
         InitializeComponent();
-        _db = db;
+        _supa = supa;
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
 
-        // Load ingredients for selection
-        var ingredients = await _db.Connection.Table<Ingredient>().ToListAsync();
+        var ingredients = await _supa.GetAllIngredientsAsync();
 
         _ingredientChecks = ingredients.Select(i => new IngredientCheck
         {
@@ -43,7 +42,6 @@ public partial class RecipesPage : ContentPage
 
         IngredientSelector.ItemsSource = _ingredientChecks;
 
-        // Load recipes list (with ingredient names)
         await LoadRecipes();
     }
 
@@ -51,8 +49,8 @@ public partial class RecipesPage : ContentPage
     {
         var display = (RecipeDisplay)((Button)sender).CommandParameter;
 
-        _editingRecipe = await _db.Connection.Table<Recipe>()
-            .FirstAsync(r => r.Id == display.Id);
+        _editingRecipe = await _supa.GetRecipeByIdAsync(display.Id);
+        if (_editingRecipe == null) return;
 
         RecipeName.Text = _editingRecipe.Name;
         RecipeType.SelectedItem = _editingRecipe.Type;
@@ -63,10 +61,7 @@ public partial class RecipesPage : ContentPage
         DifficultyPicker.SelectedItem = _editingRecipe.Difficulty ?? "Medium";
         RecipeDesc.Text = _editingRecipe.Description;
 
-        // Load ingredient links
-        var used = await _db.Connection.Table<RecipeIngredient>()
-            .Where(x => x.RecipeId == _editingRecipe.Id)
-            .ToListAsync();
+        var used = await _supa.GetRecipeIngredientsByRecipeIdAsync(_editingRecipe.Id);
 
         foreach (var box in _ingredientChecks)
         {
@@ -89,7 +84,7 @@ public partial class RecipesPage : ContentPage
         {
             var newRecipe = new Recipe
             {
-                Name = RecipeName.Text,
+                Name = RecipeName.Text ?? "",
                 Type = RecipeType.SelectedItem?.ToString() ?? "Other",
                 Description = RecipeDesc.Text,
                 UserId = Preferences.Get("LoggedUserId", 0),
@@ -101,12 +96,11 @@ public partial class RecipesPage : ContentPage
                 ImagePath = null
             };
 
-            await _db.Connection.InsertAsync(newRecipe);
-            _editingRecipe = newRecipe;
+            _editingRecipe = await _supa.AddRecipeAsync(newRecipe);
         }
         else
         {
-            _editingRecipe.Name = RecipeName.Text;
+            _editingRecipe.Name = RecipeName.Text ?? "";
             _editingRecipe.Type = RecipeType.SelectedItem?.ToString() ?? "Other";
             _editingRecipe.Description = RecipeDesc.Text;
             _editingRecipe.Instructions = RecipeInstructions.Text ?? "";
@@ -115,20 +109,15 @@ public partial class RecipesPage : ContentPage
             _editingRecipe.Servings = int.TryParse(ServingsEntry.Text, out var servings) ? servings : 1;
             _editingRecipe.Difficulty = DifficultyPicker.SelectedItem?.ToString() ?? "Medium";
 
-            await _db.Connection.UpdateAsync(_editingRecipe);
+            await _supa.UpdateRecipeAsync(_editingRecipe);
         }
 
-        // Update ingredients
-        var links = await _db.Connection.Table<RecipeIngredient>()
-            .Where(x => x.RecipeId == _editingRecipe.Id)
-            .ToListAsync();
-
-        foreach (var l in links)
-            await _db.Connection.DeleteAsync(l);
+        // Replace recipe ingredients
+        await _supa.DeleteRecipeIngredientsByRecipeIdAsync(_editingRecipe.Id);
 
         foreach (var ing in _ingredientChecks.Where(i => i.IsSelected))
         {
-            await _db.Connection.InsertAsync(new RecipeIngredient
+            await _supa.AddRecipeIngredientAsync(new RecipeIngredient
             {
                 RecipeId = _editingRecipe.Id,
                 IngredientId = ing.IngredientId,
@@ -142,6 +131,7 @@ public partial class RecipesPage : ContentPage
 
         await LoadRecipes();
     }
+
     private void ClearRecipeForm()
     {
         RecipeName.Text = "";
@@ -163,11 +153,12 @@ public partial class RecipesPage : ContentPage
         IngredientSelector.ItemsSource = null;
         IngredientSelector.ItemsSource = _ingredientChecks;
     }
+
     private async Task LoadRecipes()
     {
-        var recipes = await _db.Connection.Table<Recipe>().ToListAsync();
-        var recipeIngredients = await _db.Connection.Table<RecipeIngredient>().ToListAsync();
-        var ingredients = await _db.Connection.Table<Ingredient>().ToListAsync();
+        var recipes = await _supa.GetAllRecipesAsync();
+        var recipeIngredients = await _supa.GetAllRecipeIngredientsAsync();
+        var ingredients = await _supa.GetAllIngredientsAsync();
 
         var ingredientMap = ingredients.ToDictionary(i => i.Id, i => i.Name);
 
@@ -195,24 +186,10 @@ public partial class RecipesPage : ContentPage
     private async void OnDeleteRecipe(object sender, EventArgs e)
     {
         var recipeDisplay = (RecipeDisplay)((Button)sender).CommandParameter;
-
-        // now get real recipe
-        var recipe = await _db.Connection.Table<Recipe>()
-            .FirstAsync(r => r.Id == recipeDisplay.Id);
-
-        // delete links first
-        var links = await _db.Connection.Table<RecipeIngredient>()
-            .Where(x => x.RecipeId == recipe.Id)
-            .ToListAsync();
-
-        foreach (var link in links)
-            await _db.Connection.DeleteAsync(link);
-
-        // delete recipe
-        await _db.Connection.DeleteAsync(recipe);
-
+        await _supa.DeleteRecipeAsync(recipeDisplay.Id);
         await LoadRecipes();
     }
+
     private async void OnBackClicked(object sender, EventArgs e)
     {
         await Shell.Current.GoToAsync("//home");

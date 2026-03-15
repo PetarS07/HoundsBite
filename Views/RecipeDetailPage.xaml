@@ -22,9 +22,24 @@
                            FontSize="40" 
                            VerticalOptions="Center"/>
                     <VerticalStackLayout Spacing="4" VerticalOptions="Center">
-                        <Label x:Name="RecipeName" 
-                               Style="{StaticResource HeaderLabel}"
-                               FontSize="28"/>
+                        <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                            <Label x:Name="RecipeName" 
+                                   Style="{StaticResource HeaderLabel}"
+                                   FontSize="28"
+                                   VerticalOptions="Center"/>
+                                   
+                            <!-- NEW: Favorite Star Button for Detail View -->
+                            <Label x:Name="FavoriteIcon"
+                                   Text="☆"
+                                   FontSize="28"
+                                   VerticalOptions="Center"
+                                   IsVisible="False">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnFavoriteTapped" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </HorizontalStackLayout>
+
                         <Label x:Name="RecipeType" 
                                TextColor="{StaticResource Primary}" 
                                FontSize="14" 

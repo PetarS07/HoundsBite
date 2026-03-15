@@ -5,24 +5,24 @@ namespace HoundsBite.Views;
 
 public partial class DisplayIngredientsPage : ContentPage
 {
-    private readonly DatabaseService _db;
+    private readonly SupabaseService _supa;
     public ObservableCollection<IngredientCheckModel> Ingredients { get; set; } = new();
     private List<IngredientCheckModel> AllIngredients { get; set; } = new();
-    
+
     private int _currentUserId = 0;
 
     public class IngredientCheckModel
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public bool IsSelected { get; set; }
         public bool IsLoggedIn { get; set; }
     }
 
-    public DisplayIngredientsPage(DatabaseService db)
+    public DisplayIngredientsPage(SupabaseService supa)
     {
         InitializeComponent();
-        _db = db;
+        _supa = supa;
         IngredientList.ItemsSource = Ingredients;
     }
 
@@ -36,19 +36,18 @@ public partial class DisplayIngredientsPage : ContentPage
     {
         Ingredients.Clear();
         AllIngredients.Clear();
-        var ingredients = await _db.Connection.Table<Models.Ingredient>().ToListAsync();
-        
-        // Check if user is logged in
+
+        var ingredients = await _supa.GetAllIngredientsAsync();
+
         _currentUserId = Preferences.Get("LoggedUserId", 0);
         bool isLoggedIn = _currentUserId > 0;
-        
-        // Load user's selected ingredients from database
+
         List<int> userIngredientIds = new();
         if (isLoggedIn)
         {
-            userIngredientIds = await _db.GetUserIngredientIdsAsync(_currentUserId);
+            userIngredientIds = await _supa.GetUserIngredientIdsAsync(_currentUserId);
         }
-        
+
         foreach (var ingredient in ingredients)
         {
             var item = new IngredientCheckModel
@@ -66,13 +65,13 @@ public partial class DisplayIngredientsPage : ContentPage
     private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
     {
         var searchText = e.NewTextValue?.ToLower() ?? "";
-        
+
         Ingredients.Clear();
-        
+
         var filtered = string.IsNullOrWhiteSpace(searchText)
             ? AllIngredients
             : AllIngredients.Where(i => i.Name.ToLower().Contains(searchText));
-        
+
         foreach (var item in filtered)
         {
             Ingredients.Add(item);
@@ -86,18 +85,14 @@ public partial class DisplayIngredientsPage : ContentPage
 
     private async void OnIngredientCheckedChanged(object sender, CheckedChangedEventArgs e)
     {
-        if (_currentUserId == 0) return; // Not logged in
-        
+        if (_currentUserId == 0) return;
+
         var checkBox = (CheckBox)sender;
         var item = (IngredientCheckModel)checkBox.BindingContext;
-        
+
         if (e.Value)
-        {
-            await _db.AddUserIngredientAsync(_currentUserId, item.Id);
-        }
+            await _supa.AddUserIngredientAsync(_currentUserId, item.Id);
         else
-        {
-            await _db.RemoveUserIngredientAsync(_currentUserId, item.Id);
-        }
+            await _supa.RemoveUserIngredientAsync(_currentUserId, item.Id);
     }
 }

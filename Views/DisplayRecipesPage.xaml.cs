@@ -5,113 +5,109 @@ namespace HoundsBite.Views;
 
 public partial class DisplayRecipesPage : ContentPage
 {
-    private readonly DatabaseService _db;
+    private readonly SupabaseService _supa;
     private bool _filterActive = false;
+    private bool _favoritesOnly = false;
     private int _currentUserId = 0;
     private string _searchText = "";
+    private List<int> _userFavoriteRecipeIds = new();
 
-    public DisplayRecipesPage(DatabaseService db)
+    public DisplayRecipesPage(SupabaseService supa)
     {
         InitializeComponent();
-        _db = db;
+        _supa = supa;
     }
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        
-        // Check login status and show/hide filter toggle
+
         _currentUserId = Preferences.Get("LoggedUserId", 0);
         FilterToggleContainer.IsVisible = _currentUserId > 0;
-        
-        // Set default category filter to "All"
+        FavoritesToggleContainer.IsVisible = _currentUserId > 0; // Only logged in users can favorite
+
         if (CategoryFilter.SelectedIndex == -1)
-        {
-            CategoryFilter.SelectedIndex = 0; // "All"
-        }
-        
+            CategoryFilter.SelectedIndex = 0;
+
         await LoadRecipes();
     }
 
     private async void OnBackClicked(object sender, EventArgs e)
-    {
-        await Shell.Current.GoToAsync("//home");
-    }
+        => await Shell.Current.GoToAsync("//home");
 
     private async void OnFilterToggled(object sender, ToggledEventArgs e)
     {
         _filterActive = e.Value;
-        
-        // Check if user has selected ingredients when enabling filter
+
         if (_filterActive && _currentUserId > 0)
         {
-            var userIngredientIds = await _db.GetUserIngredientIdsAsync(_currentUserId);
-            
+            var userIngredientIds = await _supa.GetUserIngredientIdsAsync(_currentUserId);
+
             if (userIngredientIds.Count == 0)
             {
-                await DisplayAlert("No Ingredients Selected", 
-                    "Please select your available ingredients first by going to 'View Ingredients' page.", 
+                await DisplayAlert("No Ingredients Selected",
+                    "Please select your available ingredients first by going to 'View Ingredients' page.",
                     "OK");
                 FilterToggle.IsToggled = false;
                 _filterActive = false;
                 return;
             }
         }
-        
+
+        await LoadRecipes();
+    }
+
+    private async void OnFavoritesToggled(object sender, ToggledEventArgs e)
+    {
+        _favoritesOnly = e.Value;
         await LoadRecipes();
     }
 
     private async void OnCategoryFilterChanged(object sender, EventArgs e)
-    {
-        await LoadRecipes();
-    }
+        => await LoadRecipes();
 
     private async Task LoadRecipes()
     {
-        var recipes = await _db.Connection.Table<Recipe>().ToListAsync();
-        var recipeIngredients = await _db.Connection.Table<RecipeIngredient>().ToListAsync();
-        var ingredients = await _db.Connection.Table<Ingredient>().ToListAsync();
+        var recipes = await _supa.GetAllRecipesAsync();
+        var recipeIngredients = await _supa.GetAllRecipeIngredientsAsync();
+        var ingredients = await _supa.GetAllIngredientsAsync();
 
         var ingredientMap = ingredients.ToDictionary(i => i.Id, i => i.Name);
 
-        // Get user's available ingredients from database
         List<int> userIngredientIds = new();
         if (_currentUserId > 0)
         {
-            userIngredientIds = await _db.GetUserIngredientIdsAsync(_currentUserId);
+            userIngredientIds = await _supa.GetUserIngredientIdsAsync(_currentUserId);
+            _userFavoriteRecipeIds = await _supa.GetFavoriteRecipeIdsAsync(_currentUserId);
         }
 
-        // Filter recipes based on toggle state
         IEnumerable<Recipe> filteredRecipes = recipes;
-        
+
+        if (_favoritesOnly && _currentUserId > 0)
+        {
+            filteredRecipes = filteredRecipes.Where(r => _userFavoriteRecipeIds.Contains(r.Id));
+        }
+
         if (_filterActive && userIngredientIds.Count > 0)
         {
-            // Show only recipes where user has ALL required ingredients
-            filteredRecipes = recipes.Where(r =>
+            filteredRecipes = filteredRecipes.Where(r =>
             {
                 var recipeIngredientIds = recipeIngredients
                     .Where(ri => ri.RecipeId == r.Id)
                     .Select(ri => ri.IngredientId)
                     .ToHashSet();
 
-                // Recipe can be made if all its ingredients are in user's collection
-                return recipeIngredientIds.All(ingredientId => userIngredientIds.Contains(ingredientId));
+                return recipeIngredientIds.All(id => userIngredientIds.Contains(id));
             });
         }
 
-        // Filter by category
         var selectedCategory = CategoryFilter.SelectedItem?.ToString();
         if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "All")
-        {
             filteredRecipes = filteredRecipes.Where(r => r.Type == selectedCategory);
-        }
 
-        // Filter by search text
         if (!string.IsNullOrWhiteSpace(_searchText))
-        {
-            filteredRecipes = filteredRecipes.Where(r => 
+            filteredRecipes = filteredRecipes.Where(r =>
                 r.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
-        }
 
         var displayList = filteredRecipes.Select(r =>
         {
@@ -129,6 +125,8 @@ public partial class DisplayRecipesPage : ContentPage
                 _ => "🍲"
             };
 
+            bool isFav = _userFavoriteRecipeIds.Contains(r.Id);
+
             return new RecipeDisplay
             {
                 Id = r.Id,
@@ -136,17 +134,24 @@ public partial class DisplayRecipesPage : ContentPage
                 Type = r.Type,
                 Description = r.Description,
                 IngredientNames = string.Join(", ", names),
-                Icon = icon
+                Icon = icon,
+                IsFavorite = isFav,
+                FavoriteIcon = isFav ? "⭐" : "☆" // Filled vs Outline star
             };
         }).ToList();
 
         RecipeList.ItemsSource = displayList;
-        
-        // Show message if filter is active and no recipes found
-        if (_filterActive && displayList.Count == 0)
+
+        if (_filterActive && displayList.Count == 0 && !_favoritesOnly)
         {
-            await DisplayAlert("No Recipes Found", 
-                "No recipes can be made with your current ingredients. Try adding more ingredients to your collection.", 
+            await DisplayAlert("No Recipes Found",
+                "No recipes can be made with your current ingredients. Try adding more ingredients to your collection.",
+                "OK");
+        }
+        else if (_favoritesOnly && displayList.Count == 0 && string.IsNullOrWhiteSpace(_searchText))
+        {
+            await DisplayAlert("No Favorites Yet",
+                "You haven't added any favorite recipes yet.",
                 "OK");
         }
     }
@@ -160,14 +165,42 @@ public partial class DisplayRecipesPage : ContentPage
     private async void OnRecipeTapped(object sender, TappedEventArgs e)
     {
         if (e.Parameter is int recipeId)
-        {
             await Shell.Current.GoToAsync($"recipe-detail?recipeId={recipeId}");
+    }
+
+    private async void OnFavoriteTapped(object sender, TappedEventArgs e)
+    {
+        if (_currentUserId == 0)
+        {
+            await DisplayAlert("Login Required", "Please login to save favorite recipes.", "OK");
+            return;
+        }
+
+        if (e.Parameter is int recipeId)
+        {
+            bool isFav = _userFavoriteRecipeIds.Contains(recipeId);
+
+            if (isFav)
+            {
+                await _supa.RemoveFavoriteRecipeAsync(_currentUserId, recipeId);
+                _userFavoriteRecipeIds.Remove(recipeId);
+            }
+            else
+            {
+                await _supa.AddFavoriteRecipeAsync(_currentUserId, recipeId);
+                _userFavoriteRecipeIds.Add(recipeId);
+            }
+
+            // Immediately refresh list to reflect new favorite state
+            await LoadRecipes();
         }
     }
 
     public class RecipeDisplay : Recipe
     {
-        public string IngredientNames { get; set; }
-        public string Icon { get; set; }
+        public string IngredientNames { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public bool IsFavorite { get; set; }
+        public string FavoriteIcon { get; set; } = "☆";
     }
 }

@@ -1,17 +1,16 @@
-﻿using HoundsBite.Models;
-using HoundsBite.Services;
+﻿using HoundsBite.Services;
 using Microsoft.Maui.Storage;
 
 namespace HoundsBite.Views;
 
 public partial class LoginPopup : ContentPage
 {
-    private readonly DatabaseService _db;
+    private readonly SupabaseService _supa;
 
-    public LoginPopup(DatabaseService db)
+    public LoginPopup(SupabaseService supa)
     {
         InitializeComponent();
-        _db = db;
+        _supa = supa;
     }
 
     private async void OnCloseClicked(object sender, EventArgs e)
@@ -28,8 +27,7 @@ public partial class LoginPopup : ContentPage
             return;
         }
 
-        var user = await _db.Connection.Table<User>()
-            .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+        var user = await _supa.LoginAsync(username, password);
 
         if (user == null)
         {
@@ -37,16 +35,16 @@ public partial class LoginPopup : ContentPage
             return;
         }
 
-        Preferences.Set("LoggedUserId", user.Id); // ✅ запазваме кой е логнат
-        Preferences.Set("LoggedUsername", user.Username); // Store for Tab Title
+        Preferences.Set("LoggedUserId", user.Id);
+        Preferences.Set("LoggedUsername", user.Username);
         Preferences.Set("IsAdmin", user.IsAdmin);
 
-        MessagingCenter.Send<object>(this, "LoginChanged"); // Notify Shell
-        
+        MessagingCenter.Send<object>(this, "LoginChanged");
+
         await DisplayAlert("Success", $"Welcome, {user.Username}!", "OK");
         await Navigation.PopModalAsync();
     }
 
     private async void OnRegisterClicked(object sender, EventArgs e)
-        => await Navigation.PushModalAsync(new RegisterPopup(_db));
+        => await Navigation.PushModalAsync(new RegisterPopup(_supa));
 }

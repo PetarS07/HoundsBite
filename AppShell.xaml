@@ -6,28 +6,19 @@
        BackgroundColor="#121212"
        ForegroundColor="White"
        Shell.FlyoutBehavior="Disabled"
-       Shell.NavBarIsVisible="False">
+       Shell.NavBarIsVisible="False"
+       Shell.TabBarIsVisible="False">
 
-    
-    <TabBar>
-        <Tab Title="Home">
-            <ShellContent Route="home" ContentTemplate="{DataTemplate views:HomePage}" />
-        </Tab>
-        <Tab Title="Ingredients" x:Name="IngredientsTab">
-            <ShellContent Route="ingredients" ContentTemplate="{DataTemplate views:DisplayIngredientsPage}" />
-        </Tab>
-        <Tab Title="Recipes">
-            <ShellContent Route="recipes" ContentTemplate="{DataTemplate views:DisplayRecipesPage}" />
-        </Tab>
-        <Tab Title="Login" x:Name="UserTab">
-            <ShellContent Route="user" ContentTemplate="{DataTemplate views:UserPage}" />
-        </Tab>
-    </TabBar>
-
-    <!-- Display Routes -->
+    <!-- 
+      Flat routing structure. 
+      The default MAUI TabBar is hidden. 
+      Navigation is handled by our custom NavBar control on each page. 
+    -->
+    <ShellContent Route="home" ContentTemplate="{DataTemplate views:HomePage}" />
     <ShellContent Route="display-ingredients" ContentTemplate="{DataTemplate views:DisplayIngredientsPage}" />
     <ShellContent Route="display-recipes" ContentTemplate="{DataTemplate views:DisplayRecipesPage}" />
-    
+    <ShellContent Route="user" ContentTemplate="{DataTemplate views:UserPage}" />
+
     <!-- Admin Routes -->
     <ShellContent Route="admin-ingredients" ContentTemplate="{DataTemplate views:IngredientsPage}" />
     <ShellContent Route="admin-recipes" ContentTemplate="{DataTemplate views:RecipesPage}" />

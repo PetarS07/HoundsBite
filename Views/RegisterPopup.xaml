@@ -9,7 +9,7 @@
            Padding="20"
            BackgroundColor="#1E1E1E"
            CornerRadius="12"
-           WidthRequest="300">
+           WidthRequest="320">
 
         <VerticalStackLayout Spacing="15">
 
@@ -18,16 +18,45 @@
                    HorizontalOptions="Center"
                    TextColor="White"/>
 
-            <Entry x:Name="UsernameEntry"
-                   Placeholder="Username"
-                   TextColor="White"/>
+            <VerticalStackLayout Spacing="4">
+                <Entry x:Name="EmailEntry"
+                       Placeholder="Email"
+                       TextColor="White"
+                       TextChanged="OnEmailTextChanged"/>
+                <Label x:Name="EmailErrorLabel"
+                       Text="Example: example@email.com"
+                       TextColor="Red"
+                       FontSize="12"
+                       IsVisible="False" />
+            </VerticalStackLayout>
 
-            <Entry x:Name="PasswordEntry"
-                   Placeholder="Password"
-                   IsPassword="True"
-                   TextColor="White"/>
+            <VerticalStackLayout Spacing="4">
+                <Entry x:Name="PasswordEntry"
+                       Placeholder="Password"
+                       IsPassword="True"
+                       TextColor="White"
+                       TextChanged="OnPasswordTextChanged"/>
+                
+                <Label Text="Requirements" 
+                       TextColor="DeepSkyBlue" 
+                       TextDecorations="Underline" 
+                       FontSize="12">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnRequirementsTapped"/>
+                    </Label.GestureRecognizers>
+                </Label>
 
-            <Button Text="Create Account"
+                <VerticalStackLayout x:Name="RequirementsPanel" IsVisible="False" Spacing="2" Margin="5,0,0,0">
+                    <Label x:Name="ReqLength" Text="• Minimum 8 characters" FontSize="12" TextColor="Red"/>
+                    <Label x:Name="ReqUpper" Text="• At least one uppercase letter" FontSize="12" TextColor="Red"/>
+                    <Label x:Name="ReqLower" Text="• At least one lowercase letter" FontSize="12" TextColor="Red"/>
+                    <Label x:Name="ReqNumber" Text="• At least one number" FontSize="12" TextColor="Red"/>
+                    <Label x:Name="ReqSpecial" Text="• At least one special character" FontSize="12" TextColor="Red"/>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <Button x:Name="RegisterButton"
+                    Text="Create Account"
                     BackgroundColor="#8B0000"
                     TextColor="White"
                     Clicked="OnRegisterClicked"/>
