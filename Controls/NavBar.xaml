@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView x:Class="HoundsBite.Controls.NavBar"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Name="NavBarRoot">
+
+    <!-- Floating pill bar pinned at page bottom -->
+    <Border Margin="16,0,16,20"
+            Padding="8,6"
+            BackgroundColor="#1E1E1E"
+            StrokeThickness="1"
+            Stroke="#2A2A2A"
+            HorizontalOptions="Fill"
+            VerticalOptions="End">
+        <Border.Shadow>
+            <Shadow Brush="Black" Offset="0,6" Radius="20" Opacity="0.5"/>
+        </Border.Shadow>
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="32"/>
+        </Border.StrokeShape>
+
+        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="0">
+
+            <!-- Home -->
+            <Grid Grid.Column="0" Padding="8,4" RowDefinitions="Auto,Auto">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnHomeTapped"/>
+                </Grid.GestureRecognizers>
+                <Border x:Name="HomePill"
+                        BackgroundColor="Transparent"
+                        StrokeThickness="0"
+                        HorizontalOptions="Center"
+                        Padding="14,6">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20"/>
+                    </Border.StrokeShape>
+                    <Label x:Name="HomeIcon" Text="🏠" FontSize="22"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <Label x:Name="HomeLabel" Grid.Row="1"
+                       Text="Home" FontSize="10"
+                       HorizontalOptions="Center"
+                       TextColor="#888888"/>
+            </Grid>
+
+            <!-- Ingredients -->
+            <Grid Grid.Column="1" Padding="8,4" RowDefinitions="Auto,Auto">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnIngredientsTapped"/>
+                </Grid.GestureRecognizers>
+                <Border x:Name="IngredientsPill"
+                        BackgroundColor="Transparent"
+                        StrokeThickness="0"
+                        HorizontalOptions="Center"
+                        Padding="14,6">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20"/>
+                    </Border.StrokeShape>
+                    <Label x:Name="IngredientsIcon" Text="🥕" FontSize="22"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <Label x:Name="IngredientsLabel" Grid.Row="1"
+                       Text="Ingredients" FontSize="10"
+                       HorizontalOptions="Center"
+                       TextColor="#888888"/>
+            </Grid>
+
+            <!-- Recipes -->
+            <Grid Grid.Column="2" Padding="8,4" RowDefinitions="Auto,Auto">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnRecipesTapped"/>
+                </Grid.GestureRecognizers>
+                <Border x:Name="RecipesPill"
+                        BackgroundColor="Transparent"
+                        StrokeThickness="0"
+                        HorizontalOptions="Center"
+                        Padding="14,6">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20"/>
+                    </Border.StrokeShape>
+                    <Label x:Name="RecipesIcon" Text="📖" FontSize="22"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <Label x:Name="RecipesLabel" Grid.Row="1"
+                       Text="Recipes" FontSize="10"
+                       HorizontalOptions="Center"
+                       TextColor="#888888"/>
+            </Grid>
+
+            <!-- Profile -->
+            <Grid Grid.Column="3" Padding="8,4" RowDefinitions="Auto,Auto">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnProfileTapped"/>
+                </Grid.GestureRecognizers>
+                <Border x:Name="ProfilePill"
+                        BackgroundColor="Transparent"
+                        StrokeThickness="0"
+                        HorizontalOptions="Center"
+                        Padding="14,6">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20"/>
+                    </Border.StrokeShape>
+                    <Label x:Name="ProfileIcon" Text="👤" FontSize="22"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <Label x:Name="ProfileLabel" Grid.Row="1"
+                       Text="Profile" FontSize="10"
+                       HorizontalOptions="Center"
+                       TextColor="#888888"/>
+            </Grid>
+
+        </Grid>
+    </Border>
+</ContentView>
