@@ -1,22 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SQLite;
+﻿using System.Text.Json.Serialization;
 
 namespace HoundsBite.Models;
 
 public class User
 {
-    [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
-
-    [Unique]
     public string Username { get; set; } = string.Empty;
 
-    public string Password { get; set; } = string.Empty;
+    [JsonPropertyName("password_hash")]
+    public string PasswordHash { get; set; } = string.Empty;
 
-    // Роля: admin или обикновен user
+    [JsonPropertyName("is_admin")]
     public bool IsAdmin { get; set; } = false;
+
+    [JsonPropertyName("display_name")]
+    public string? DisplayName { get; set; }
 }

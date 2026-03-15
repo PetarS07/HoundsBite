@@ -1,21 +1,28 @@
-using SQLite;
+using System.Text.Json.Serialization;
 
 namespace HoundsBite.Models;
 
 public class Recipe
 {
-    [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public string Type { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string? Type { get; set; }
+
+    [JsonPropertyName("user_id")]
     public int UserId { get; set; }
-    
-    // Enhanced recipe details
-    public string Instructions { get; set; }
-    public int PrepTime { get; set; } // in minutes
-    public int CookTime { get; set; } // in minutes
-    public int Servings { get; set; }
-    public string Difficulty { get; set; } // Easy, Medium, Hard
-    public string ImagePath { get; set; } // for future enhancement
+
+    public string? Instructions { get; set; }
+
+    [JsonPropertyName("prep_time")]
+    public int PrepTime { get; set; }
+
+    [JsonPropertyName("cook_time")]
+    public int CookTime { get; set; }
+
+    public int Servings { get; set; } = 1;
+    public string? Difficulty { get; set; } = "Medium";
+
+    [JsonPropertyName("image_path")]
+    public string? ImagePath { get; set; }
 }
