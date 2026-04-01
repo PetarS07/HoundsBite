@@ -3,28 +3,34 @@
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:controls="clr-namespace:HoundsBite.Controls"
-             Title="Ingredients List">
+             Title="Ingredients">
 
     <Grid RowDefinitions="*, Auto">
 
         <ScrollView Grid.Row="0">
             <VerticalStackLayout Padding="24,24,24,0" Spacing="24">
 
-                <!-- Header -->
-                <Label Text="Kitchen Inventory"
+                <Label Text="Kitchen inventory"
                        Style="{StaticResource HeaderLabel}"/>
 
-                <Label Text="Select what you have in your kitchen"
+                <Label Text="Search to filter your catalog; press search to add matches from the food database. Set quantity and use the kitchen button to track what you have. Delete removes an item from your kitchen; admins can also delete from the global catalog."
                        TextColor="{StaticResource TextSecondary}"
                        Margin="0,-16,0,0"/>
 
-                <!-- Search Bar -->
                 <Border Style="{StaticResource CardView}" Padding="0" Margin="0,0,0,8">
                     <SearchBar x:Name="SearchBar"
-                               Placeholder="Search ingredients..."
+                               Placeholder="Search ingredients…"
                                TextChanged="OnSearchTextChanged"
+                               SearchButtonPressed="OnSearchButtonPressed"
                                BackgroundColor="Transparent"/>
                 </Border>
+
+                <ActivityIndicator x:Name="ApiLoadingIndicator"
+                                   IsRunning="False"
+                                   IsVisible="False"
+                                   Color="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   Margin="0,20"/>
 
                 <CollectionView x:Name="IngredientList">
                     <CollectionView.ItemsLayout>
@@ -32,33 +38,119 @@
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Border Style="{StaticResource CardView}" Padding="16" HeightRequest="100">
-                                <Grid RowDefinitions="*, Auto">
-                                    <VerticalStackLayout Spacing="4">
+                            <Border Style="{StaticResource CardView}" Padding="12" MinimumHeightRequest="180">
+                                <Grid RowDefinitions="Auto, Auto, Auto">
+                                    <VerticalStackLayout Spacing="8" VerticalOptions="Start">
+                                        <Image Source="{Binding ImageUrl}"
+                                               HeightRequest="60"
+                                               WidthRequest="60"
+                                               HorizontalOptions="Center"
+                                               IsVisible="{Binding HasImage}"
+                                               Aspect="AspectFit" />
                                         <Label Text="{Binding Name}"
-                                               Style="{StaticResource CardTitle}"
-                                               LineBreakMode="TailTruncation"
-                                               VerticalOptions="Center"/>
+                                               FontSize="15"
+                                               FontAttributes="Bold"
+                                               LineBreakMode="WordWrap"
+                                               MaxLines="2"
+                                               HorizontalOptions="Center"
+                                               HorizontalTextAlignment="Center"/>
                                     </VerticalStackLayout>
-                                    <HorizontalStackLayout Grid.Row="1" HorizontalOptions="End">
-                                        <CheckBox IsChecked="{Binding IsSelected}"
-                                                  IsVisible="{Binding IsLoggedIn}"
-                                                  CheckedChanged="OnIngredientCheckedChanged"
-                                                  Color="{StaticResource Primary}"/>
-                                    </HorizontalStackLayout>
+
+                                    <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0"
+                                          IsEnabled="{Binding IsLoggedIn}">
+                                        <Entry Text="{Binding Quantity, Mode=TwoWay}"
+                                               Placeholder="Qty"
+                                               FontSize="12"
+                                               HeightRequest="40"
+                                               Unfocused="OnQuantityUnfocused"/>
+                                        <Entry Grid.Column="1"
+                                               Text="{Binding Unit, Mode=TwoWay}"
+                                               Placeholder="Unit"
+                                               FontSize="12"
+                                               HeightRequest="40"
+                                               Unfocused="OnQuantityUnfocused"/>
+                                    </Grid>
+
+                                    <Grid Grid.Row="2" ColumnDefinitions="*, Auto" ColumnSpacing="6" Margin="0,8,0,0">
+                                        <Button Text="{Binding KitchenButtonText}"
+                                                BackgroundColor="{Binding KitchenButtonColor}"
+                                                TextColor="White"
+                                                FontSize="11"
+                                                HeightRequest="34"
+                                                CornerRadius="8"
+                                                Padding="4,0"
+                                                CommandParameter="{Binding .}"
+                                                Clicked="OnKitchenToggleClicked"
+                                                IsEnabled="{Binding IsLoggedIn}" />
+
+                                        <Button Grid.Column="1"
+                                                Text="Delete"
+                                                Style="{StaticResource SecondaryButton}"
+                                                FontSize="11"
+                                                HeightRequest="34"
+                                                Padding="10,0"
+                                                CommandParameter="{Binding .}"
+                                                Clicked="OnDeleteClicked"
+                                                IsVisible="{Binding ShowDeleteButton}" />
+                                    </Grid>
                                 </Grid>
                             </Border>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
 
-                <!-- Bottom spacing so content clears the NavBar -->
-                <BoxView HeightRequest="90" Color="Transparent"/>
+                <BoxView HeightRequest="160" Color="Transparent"/>
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- Custom Nav Bar -->
-        <controls:NavBar Grid.Row="1" ActiveTab="Ingredients" Margin="0,-80,0,0"/>
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto" Margin="0,-80,0,0">
+
+            <Border Grid.Row="0"
+                    BackgroundColor="#1A1A1A"
+                    StrokeThickness="0">
+                <VerticalStackLayout Spacing="0">
+                    <Button x:Name="AddPanelToggle"
+                            Text="＋ Add product"
+                            Clicked="OnAddPanelToggle"
+                            BackgroundColor="#252525"
+                            TextColor="{StaticResource Primary}"
+                            FontSize="13"
+                            HeightRequest="40"
+                            CornerRadius="0" />
+
+                    <VerticalStackLayout x:Name="AddIngredientForm"
+                                         IsVisible="False"
+                                         Spacing="8"
+                                         Padding="16,10,16,12">
+                        <Entry x:Name="NewIngredientEntry"
+                               Placeholder="Name"
+                               TextColor="White"
+                               PlaceholderColor="#888"
+                               BackgroundColor="#252525" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                            <Entry x:Name="NewQtyEntry"
+                                   Placeholder="Quantity"
+                                   Keyboard="Default"
+                                   TextColor="White"
+                                   PlaceholderColor="#888"
+                                   BackgroundColor="#252525" />
+                            <Entry x:Name="NewUnitEntry"
+                                   Grid.Column="1"
+                                   Placeholder="Unit"
+                                   TextColor="White"
+                                   PlaceholderColor="#888"
+                                   BackgroundColor="#252525" />
+                        </Grid>
+                        <Button Text="Add to catalog and kitchen"
+                                Clicked="OnAddIngredientClicked"
+                                HeightRequest="36"
+                                FontSize="13" />
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <controls:NavBar Grid.Row="1" ActiveTab="Ingredients" />
+        </Grid>
 
     </Grid>
 </ContentPage>

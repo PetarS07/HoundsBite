@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace HoundsBite.Models;
 
 public class Ingredient
@@ -28,4 +30,6 @@ public class Ingredient
 
     [JsonPropertyName("fat")]
     public double? Fat { get; set; }
+
+    public bool HasImage => !string.IsNullOrWhiteSpace(ImageUrl);
 }

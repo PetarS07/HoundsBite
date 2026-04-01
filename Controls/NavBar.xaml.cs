@@ -1,6 +1,6 @@
 namespace HoundsBite.Controls;
 
-public enum NavTab { Home, Ingredients, Recipes, Profile }
+public enum NavTab { Home, Ingredients, Recipes, Profile, Admin }
 
 public partial class NavBar : ContentView
 {
@@ -26,7 +26,41 @@ public partial class NavBar : ContentView
     public NavBar()
     {
         InitializeComponent();
+        CheckAdminVisibility();
         ApplyActiveTab(NavTab.Home);
+
+        // Listen for login changes to update Admin tab visibility
+        MessagingCenter.Subscribe<object>(this, "LoginChanged", (sender) =>
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                CheckAdminVisibility();
+            });
+        });
+    }
+
+    private void CheckAdminVisibility()
+    {
+        // Simple logic: check if the logged in user in Preferences is admin
+        // Note: In a real app, we'd use a more robust State Management / Auth Service
+        bool isAdmin = Preferences.Get("IsAdminUser", false);
+        AdminTab.IsVisible = isAdmin;
+
+        // Update grid columns to avoid empty space when admin is hidden
+        if (isAdmin)
+        {
+            RootGrid.ColumnDefinitions = new ColumnDefinitionCollection 
+            { 
+                new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star) 
+            };
+        }
+        else
+        {
+            RootGrid.ColumnDefinitions = new ColumnDefinitionCollection 
+            { 
+                new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)
+            };
+        }
     }
 
     // ── Tab styling ────────────────────────────────────────────────────────
@@ -37,6 +71,7 @@ public partial class NavBar : ContentView
         SetTab(IngredientsPill, IngredientsIcon, IngredientsLabel, false);
         SetTab(RecipesPill, RecipesIcon, RecipesLabel, false);
         SetTab(ProfilePill, ProfileIcon, ProfileLabel, false);
+        SetTab(AdminPill, AdminIcon, AdminLabel, false);
 
         // Highlight active
         switch (tab)
@@ -45,6 +80,7 @@ public partial class NavBar : ContentView
             case NavTab.Ingredients: SetTab(IngredientsPill, IngredientsIcon, IngredientsLabel, true); break;
             case NavTab.Recipes:     SetTab(RecipesPill, RecipesIcon, RecipesLabel, true); break;
             case NavTab.Profile:     SetTab(ProfilePill, ProfileIcon, ProfileLabel, true); break;
+            case NavTab.Admin:       SetTab(AdminPill, AdminIcon, AdminLabel, true); break;
         }
     }
 
@@ -66,6 +102,15 @@ public partial class NavBar : ContentView
     private async void OnIngredientsTapped(object sender, TappedEventArgs e)
     {
         if (ActiveTab == NavTab.Ingredients) return;
+        if (Preferences.Get("LoggedUserId", 0) == 0)
+        {
+            await Shell.Current.DisplayAlert(
+                "Login required",
+                "Please log in from Profile to view your kitchen inventory.",
+                "OK");
+            return;
+        }
+
         await Shell.Current.GoToAsync("//display-ingredients");
     }
 
@@ -79,5 +124,11 @@ public partial class NavBar : ContentView
     {
         if (ActiveTab == NavTab.Profile) return;
         await Shell.Current.GoToAsync("//user");
+    }
+
+    private async void OnAdminTapped(object sender, TappedEventArgs e)
+    {
+        if (ActiveTab == NavTab.Admin) return;
+        await Shell.Current.GoToAsync("//admin-dashboard");
     }
 }

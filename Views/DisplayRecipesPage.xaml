@@ -13,16 +13,21 @@
                 <Label Text="Discover Recipes"
                        Style="{StaticResource HeaderLabel}"/>
 
+                <Label Text="Find community favorites or search the global database"
+                       TextColor="{StaticResource TextSecondary}"
+                       Margin="0,-16,0,0"/>
+
                 <!-- Search Bar -->
                 <Border Style="{StaticResource CardView}" Padding="0" Margin="0,0,0,4">
                     <SearchBar x:Name="SearchBar"
-                               Placeholder="Find your next meal..."
+                               Placeholder="Search recipes..."
                                TextChanged="OnSearchTextChanged"
+                               SearchButtonPressed="OnSearchButtonPressed"
                                BackgroundColor="Transparent"/>
                 </Border>
 
-                <!-- Filters Section -->
-                <Border Style="{StaticResource CardView}" Padding="16" Margin="0,0,0,8">
+                <!-- Filters Section (Only visible in Community Mode) -->
+                <Border x:Name="FiltersPanel" Style="{StaticResource CardView}" Padding="16" Margin="0,0,0,8">
                     <VerticalStackLayout Spacing="12">
                         <Grid ColumnDefinitions="*, Auto">
                             <Label Text="Filters" Style="{StaticResource CardTitle}" VerticalOptions="Center"/>
@@ -54,13 +59,21 @@
                             <Switch Grid.Column="1" x:Name="FilterToggle" Toggled="OnFilterToggled" />
                         </Grid>
 
-                        <!-- NEW: Favorites Only Filter -->
+                        <!-- Favorites Only Filter -->
                         <Grid x:Name="FavoritesToggleContainer" ColumnDefinitions="*, Auto" IsVisible="False">
                             <Label Text="Favorites Only" VerticalOptions="Center" TextColor="{StaticResource TextSecondary}"/>
                             <Switch Grid.Column="1" x:Name="FavoritesToggle" Toggled="OnFavoritesToggled" />
                         </Grid>
                     </VerticalStackLayout>
                 </Border>
+
+                <!-- Loading Indicator for API -->
+                <ActivityIndicator x:Name="ApiLoadingIndicator" 
+                                   IsRunning="False" 
+                                   IsVisible="False" 
+                                   Color="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   Margin="0,20"/>
 
                 <!-- Recipes List -->
                 <CollectionView x:Name="RecipeList">
@@ -69,39 +82,57 @@
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
-                            <Border Style="{StaticResource CardView}" Padding="16" HeightRequest="120">
+                            <Border Style="{StaticResource CardView}" Padding="12" MinimumHeightRequest="150">
                                 <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnRecipeTapped" CommandParameter="{Binding Id}"/>
+                                    <TapGestureRecognizer Tapped="OnRecipeTapped" CommandParameter="{Binding .}"/>
                                 </Border.GestureRecognizers>
                                 <Grid RowDefinitions="*, Auto">
-                                    <Grid ColumnDefinitions="*, Auto">
-                                        <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                            <Label Text="{Binding Name}"
-                                                   Style="{StaticResource CardTitle}"
-                                                   MaxLines="2"
-                                                   LineBreakMode="TailTruncation"/>
-                                            <Label Text="{Binding Type}"
-                                                   TextColor="{StaticResource Primary}"
-                                                   FontSize="11"
-                                                   FontAttributes="Bold"/>
-                                        </VerticalStackLayout>
-                                        
-                                        <!-- NEW: Favorite Star Button -->
+                                    <VerticalStackLayout Spacing="8">
+                                        <!-- Image from API or Database -->
+                                        <Image Source="{Binding ImagePath}" 
+                                               HeightRequest="80" 
+                                               WidthRequest="80" 
+                                               HorizontalOptions="Center" 
+                                               Aspect="AspectFit" />
+                                               
+                                        <Label Text="{Binding Name}"
+                                               Style="{StaticResource CardTitle}"
+                                               FontSize="15"
+                                               MaxLines="2"
+                                               HorizontalOptions="Center"
+                                               HorizontalTextAlignment="Center"
+                                               LineBreakMode="WordWrap"/>
+                                               
+                                        <Label Text="{Binding Type}"
+                                               TextColor="{StaticResource Primary}"
+                                               FontSize="11"
+                                               FontAttributes="Bold"
+                                               HorizontalOptions="Center"
+                                               IsVisible="{Binding IsLocalMode}"/>
+                                    </VerticalStackLayout>
+                                    
+                                    <Grid Grid.Row="1" ColumnDefinitions="*, Auto" Margin="0,4,0,0">
+                                        <!-- Favorite Star (Local Mode Only) -->
                                         <Label Grid.Column="1"
                                                Text="{Binding FavoriteIcon}"
                                                FontSize="20"
-                                               VerticalOptions="Start">
+                                               VerticalOptions="Center"
+                                               IsVisible="{Binding IsLocalMode}">
                                             <Label.GestureRecognizers>
-                                                <TapGestureRecognizer Tapped="OnFavoriteTapped" CommandParameter="{Binding Id}"/>
+                                                <TapGestureRecognizer Tapped="OnFavoriteTapped" CommandParameter="{Binding .}"/>
                                             </Label.GestureRecognizers>
                                         </Label>
+                                        
+                                        <!-- Import Button (API Mode Only) -->
+                                        <Button Grid.ColumnSpan="2"
+                                                Text="Import"
+                                                HeightRequest="30"
+                                                FontSize="12"
+                                                Padding="10,0"
+                                                IsVisible="{Binding IsApiMode}"
+                                                Clicked="OnImportRecipeClicked"
+                                                CommandParameter="{Binding .}"/>
                                     </Grid>
-                                    
-                                    <Label Grid.Row="1"
-                                           Text="👉 Tap to view"
-                                           FontSize="10"
-                                           TextColor="{StaticResource TextSecondary}"
-                                           HorizontalOptions="End"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>

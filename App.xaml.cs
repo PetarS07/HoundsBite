@@ -1,4 +1,4 @@
-﻿namespace HoundsBite;
+namespace HoundsBite;
 
 public partial class App : Application
 {

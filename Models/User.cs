@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace HoundsBite.Models;
 
@@ -10,8 +10,13 @@ public class User
     [JsonPropertyName("password_hash")]
     public string PasswordHash { get; set; } = string.Empty;
 
-    [JsonPropertyName("is_admin")]
-    public bool IsAdmin { get; set; } = false;
+    [JsonPropertyName("role")]
+    public string Role { get; set; } = "User";
+
+    [JsonIgnore]
+    public bool IsAdmin => 
+        string.Equals(Role, "Admin", StringComparison.OrdinalIgnoreCase) || 
+        string.Equals(Role, "Owner", StringComparison.OrdinalIgnoreCase);
 
     [JsonPropertyName("display_name")]
     public string? DisplayName { get; set; }

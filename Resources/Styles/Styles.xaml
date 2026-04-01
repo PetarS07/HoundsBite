@@ -57,7 +57,7 @@
     </Style>
 
     <!-- Buttons -->
-    <Style TargetType="Button">
+    <Style TargetType="Button" x:Key="PrimaryButton">
         <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
         <Setter Property="TextColor" Value="White" />
         <Setter Property="CornerRadius" Value="12" />
@@ -86,8 +86,10 @@
             </VisualStateGroupList>
         </Setter>
     </Style>
+
+    <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}" />
     
-    <Style TargetType="Button" x:Key="SecondaryButton">
+    <Style TargetType="Button" x:Key="SecondaryButton" BasedOn="{StaticResource PrimaryButton}">
         <Setter Property="BackgroundColor" Value="{StaticResource CardBackgroundLight}" />
         <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
         <Setter Property="Shadow" Value="{x:Null}" />

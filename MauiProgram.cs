@@ -1,6 +1,5 @@
-﻿using HoundsBite.Services;
+using HoundsBite.Services;
 using HoundsBite.Views;
-using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 
 namespace HoundsBite;
@@ -18,6 +17,7 @@ public static class MauiProgram
 
         // Register SupabaseService as a shared singleton (all devices use the same cloud DB)
         builder.Services.AddSingleton(new SupabaseService(SupabaseUrl, SupabaseKey));
+        builder.Services.AddSingleton<FoodApiService>();
 
         // Register pages so they receive SupabaseService via constructor injection
         builder.Services.AddTransient<HomePage>();
@@ -27,6 +27,7 @@ public static class MauiProgram
         builder.Services.AddTransient<DisplayRecipesPage>();
         builder.Services.AddTransient<UserPage>();
         builder.Services.AddTransient<RecipeDetailPage>();
+        builder.Services.AddTransient<AdminPage>();
 
         return builder.Build();
     }

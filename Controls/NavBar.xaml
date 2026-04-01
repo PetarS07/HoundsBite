@@ -19,7 +19,7 @@
             <RoundRectangle CornerRadius="32"/>
         </Border.StrokeShape>
 
-        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="0">
+        <Grid x:Name="RootGrid" ColumnDefinitions="*,*,*,*,*" ColumnSpacing="0">
 
             <!-- Home -->
             <Grid Grid.Column="0" Padding="8,4" RowDefinitions="Auto,Auto">
@@ -105,6 +105,28 @@
                 </Border>
                 <Label x:Name="ProfileLabel" Grid.Row="1"
                        Text="Profile" FontSize="10"
+                       HorizontalOptions="Center"
+                       TextColor="#888888"/>
+            </Grid>
+            
+            <!-- Admin (Conditional) -->
+            <Grid x:Name="AdminTab" Grid.Column="4" Padding="8,4" RowDefinitions="Auto,Auto" IsVisible="False">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnAdminTapped"/>
+                </Grid.GestureRecognizers>
+                <Border x:Name="AdminPill"
+                        BackgroundColor="Transparent"
+                        StrokeThickness="0"
+                        HorizontalOptions="Center"
+                        Padding="14,6">
+                    <Border.StrokeShape>
+                        <RoundRectangle CornerRadius="20"/>
+                    </Border.StrokeShape>
+                    <Label x:Name="AdminIcon" Text="🛠️" FontSize="22"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <Label x:Name="AdminLabel" Grid.Row="1"
+                       Text="Admin" FontSize="10"
                        HorizontalOptions="Center"
                        TextColor="#888888"/>
             </Grid>

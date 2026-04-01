@@ -52,9 +52,9 @@ public partial class RecipeDetailPage : ContentPage
                 _ => "🍲"
             };
 
-            PrepTimeLabel.Text = FormatTime(recipe.PrepTime);
-            CookTimeLabel.Text = FormatTime(recipe.CookTime);
-            ServingsLabel.Text = recipe.Servings.ToString();
+            PrepTimeLabel.Text = FormatTime(recipe.PrepTime ?? 0);
+            CookTimeLabel.Text = FormatTime(recipe.CookTime ?? 0);
+            ServingsLabel.Text = (recipe.Servings ?? 1).ToString();
 
             DifficultyLabel.Text = recipe.Difficulty ?? "Medium";
             DifficultyIcon.Text = (recipe.Difficulty ?? "Medium") switch
@@ -78,7 +78,7 @@ public partial class RecipeDetailPage : ContentPage
 
             var recipeIngredients = await _supa.GetRecipeIngredientsByRecipeIdAsync(_recipeId);
             var ingredients = await _supa.GetAllIngredientsAsync();
-            var ingredientMap = ingredients.ToDictionary(i => i.Id, i => i.Name);
+            var ingredientMap = ingredients.GroupBy(i => i.Id).ToDictionary(g => g.Key, g => g.First().Name);
 
             var ingredientDisplayList = recipeIngredients.Select(ri =>
             {
@@ -100,10 +100,28 @@ public partial class RecipeDetailPage : ContentPage
             InstructionsLabel.Text = string.IsNullOrWhiteSpace(recipe.Instructions)
                 ? "No instructions provided yet."
                 : recipe.Instructions;
+
+            if (!string.IsNullOrWhiteSpace(recipe.SourceUrl))
+            {
+                SourcePanel.IsVisible = true;
+                SourceLabel.Text = recipe.SourceUrl;
+            }
+            else
+            {
+                SourcePanel.IsVisible = false;
+            }
         }
         catch (Exception ex)
         {
             await DisplayAlert("Error", $"Failed to load recipe: {ex.Message}", "OK");
+        }
+    }
+
+    private async void OnSourceTapped(object sender, TappedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(SourceLabel.Text))
+        {
+            await Launcher.Default.OpenAsync(SourceLabel.Text);
         }
     }
 
