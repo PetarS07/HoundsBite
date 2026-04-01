@@ -60,9 +60,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.8" />
+		<PackageReference Include="Supabase" Version="1.1.1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -71,6 +71,33 @@
 	  </Compile>
 	  <Compile Update="Views\LoginPopup.xaml.cs">
 	    <DependentUpon>LoginPopup.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\RegisterPopup.xaml.cs">
+	    <DependentUpon>RegisterPopup.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\AdminPage.xaml.cs">
+	    <DependentUpon>AdminPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\DisplayRecipesPage.xaml.cs">
+	    <DependentUpon>DisplayRecipesPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\DisplayIngredientsPage.xaml.cs">
+	    <DependentUpon>DisplayIngredientsPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\RecipeDetailPage.xaml.cs">
+	    <DependentUpon>RecipeDetailPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\UserPage.xaml.cs">
+	    <DependentUpon>UserPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\IngredientsPage.xaml.cs">
+	    <DependentUpon>IngredientsPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\RecipesPage.xaml.cs">
+	    <DependentUpon>RecipesPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Controls\NavBar.xaml.cs">
+	    <DependentUpon>NavBar.xaml</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 
@@ -88,6 +115,24 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Views\RegisterPopup.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\AdminPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\DisplayRecipesPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\DisplayIngredientsPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\RecipeDetailPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\UserPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Controls\NavBar.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

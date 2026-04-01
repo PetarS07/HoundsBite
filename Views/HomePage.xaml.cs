@@ -1,4 +1,4 @@
-﻿using HoundsBite.Services;
+using HoundsBite.Services;
 
 namespace HoundsBite.Views;
 
@@ -20,11 +20,12 @@ public partial class HomePage : ContentPage
 
     private async Task RefreshLoginStatus()
     {
+        await _supa.RestoreSessionFromStorageAsync();
+
         int userId = Preferences.Get("LoggedUserId", 0);
 
         if (userId == 0)
         {
-            LoginButton.IsVisible = true;
             IngredientsCard.IsVisible = false;
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
@@ -36,21 +37,16 @@ public partial class HomePage : ContentPage
         if (user == null)
         {
             Preferences.Remove("LoggedUserId");
-            LoginButton.IsVisible = true;
             IngredientsCard.IsVisible = false;
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
             return;
         }
 
-        LoginButton.IsVisible = false;
         IngredientsCard.IsVisible = true;
         AdminIngredientsCard.IsVisible = user.IsAdmin;
         AdminRecipesCard.IsVisible = user.IsAdmin;
     }
-
-    private async void OnLoginClicked(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//user");
 
     private async void GoToIngredients(object sender, EventArgs e)
         => await Shell.Current.GoToAsync("//admin-ingredients");
@@ -59,7 +55,18 @@ public partial class HomePage : ContentPage
         => await Shell.Current.GoToAsync("//admin-recipes");
 
     private async void GoToDisplayIngredients(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//display-ingredients");
+    {
+        if (Preferences.Get("LoggedUserId", 0) == 0)
+        {
+            await DisplayAlert(
+                "Login required",
+                "Please log in from Profile to view your kitchen inventory.",
+                "OK");
+            return;
+        }
+
+        await Shell.Current.GoToAsync("//display-ingredients");
+    }
 
     private async void GoToDisplayRecipes(object sender, EventArgs e)
         => await Shell.Current.GoToAsync("//display-recipes");

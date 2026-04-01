@@ -1,4 +1,4 @@
-﻿using HoundsBite.Services;
+using HoundsBite.Services;
 using Microsoft.Maui.Storage;
 
 namespace HoundsBite.Views;
@@ -18,30 +18,27 @@ public partial class LoginPopup : ContentPage
 
     private async void OnLoginClicked(object sender, EventArgs e)
     {
-        var username = UsernameEntry.Text?.Trim() ?? "";
+        var email = UsernameEntry.Text?.Trim() ?? "";
         var password = PasswordEntry.Text?.Trim() ?? "";
 
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
-            await DisplayAlert("Error", "Username and password are required.", "OK");
+            await DisplayAlert("Error", "Email and password are required.", "OK");
             return;
         }
 
-        var user = await _supa.LoginAsync(username, password);
+        var user = await _supa.LoginAsync(email, password);
 
         if (user == null)
         {
-            await DisplayAlert("Error", "Invalid username or password.", "OK");
+            await DisplayAlert("Error", "Invalid email or password.", "OK");
             return;
         }
 
-        Preferences.Set("LoggedUserId", user.Id);
-        Preferences.Set("LoggedUsername", user.Username);
-        Preferences.Set("IsAdmin", user.IsAdmin);
-
         MessagingCenter.Send<object>(this, "LoginChanged");
 
-        await DisplayAlert("Success", $"Welcome, {user.Username}!", "OK");
+        var welcome = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName!;
+        await DisplayAlert("Success", $"Welcome, {welcome}!", "OK");
         await Navigation.PopModalAsync();
     }
 

@@ -1,22 +1,37 @@
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using HoundsBite.Models;
-using BC = BCrypt.Net.BCrypt;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Storage;
+using Supabase.Gotrue.Exceptions;
 
 namespace HoundsBite.Services;
+
+public sealed record RegisterResult(User? User, string? ErrorMessage, bool NeedsEmailConfirmation);
 
 public class SupabaseService
 {
     private readonly HttpClient _http;
     private readonly string _baseUrl;
+    private readonly string _supabaseUrl;
     private readonly string _apiKey;
+    private readonly SupabaseSessionPersistence _sessionPersistence;
+    private Supabase.Client? _client;
+    private readonly SemaphoreSlim _initLock = new(1, 1);
+    private bool _initialized;
+
+    /// <summary>Stored in public.users when passwords are managed by Supabase Auth (not verified locally).</summary>
+    private const string AuthManagedPasswordPlaceholder = "__managed_by_supabase_auth__";
 
     public SupabaseService(string supabaseUrl, string supabaseKey)
     {
-        _baseUrl = supabaseUrl.TrimEnd('/') + "/rest/v1";
+        _supabaseUrl = supabaseUrl.TrimEnd('/');
+        _baseUrl = _supabaseUrl + "/rest/v1";
         _apiKey = supabaseKey;
+        _sessionPersistence = new SupabaseSessionPersistence();
         _http = new HttpClient();
         _http.DefaultRequestHeaders.Add("apikey", _apiKey);
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _apiKey);
@@ -28,6 +43,94 @@ public class SupabaseService
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    private async Task EnsureClientReadyAsync()
+    {
+        await _initLock.WaitAsync();
+        try
+        {
+            if (_initialized)
+                return;
+
+            var options = new Supabase.SupabaseOptions
+            {
+                AutoConnectRealtime = false,
+                AutoRefreshToken = true,
+                SessionHandler = _sessionPersistence
+            };
+            _client = new Supabase.Client(_supabaseUrl, _apiKey, options);
+            await _client.InitializeAsync();
+            ApplyAuthHeadersFromSession();
+            _initialized = true;
+        }
+        finally
+        {
+            _initLock.Release();
+        }
+    }
+
+    private void ApplyAuthHeadersFromSession()
+    {
+        var token = _client?.Auth.CurrentSession?.AccessToken ?? _apiKey;
+        _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+    }
+
+    private static string? EmailFromAuthSession(Supabase.Gotrue.Session? session)
+    {
+        var u = session?.User;
+        if (u == null) return null;
+        return !string.IsNullOrEmpty(u.Email) ? u.Email : u.Phone;
+    }
+
+    /// <summary>
+    /// Call on startup so a restored Supabase session repopulates Preferences (LoggedUserId, etc.).
+    /// </summary>
+    public async Task RestoreSessionFromStorageAsync()
+    {
+        await EnsureClientReadyAsync();
+        if (_client?.Auth.CurrentSession == null)
+        {
+            if (Preferences.Get("LoggedUserId", 0) != 0)
+            {
+                Preferences.Remove("LoggedUserId");
+                Preferences.Remove("LoggedUsername");
+                Preferences.Remove("LoggedEmail");
+                Preferences.Remove("LoggedDisplayName");
+                Preferences.Remove("IsAdminUser");
+            }
+            return;
+        }
+
+        ApplyAuthHeadersFromSession();
+        if (Preferences.Get("LoggedUserId", 0) != 0)
+            return;
+
+        var email = EmailFromAuthSession(_client.Auth.CurrentSession);
+        if (string.IsNullOrEmpty(email))
+            return;
+
+        var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
+        ApplyPreferencesFromUser(profile);
+        MessagingCenter.Send<object>(this, "LoginChanged");
+    }
+
+    private static void ApplyPreferencesFromUser(User user)
+    {
+        var displayLabel = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName!;
+        Preferences.Set("LoggedUserId", user.Id);
+        Preferences.Set("LoggedUsername", user.Username);
+        Preferences.Set("LoggedEmail", user.Username);
+        Preferences.Set("LoggedDisplayName", displayLabel);
+        Preferences.Set("IsAdminUser", user.IsAdmin);
+    }
+
+    public async Task SignOutAsync()
+    {
+        await EnsureClientReadyAsync();
+        if (_client != null)
+            await _client.Auth.SignOut();
+        ApplyAuthHeadersFromSession();
+    }
 
     // ───────────── INGREDIENTS ─────────────
 
@@ -106,6 +209,14 @@ public class SupabaseService
         return list?.FirstOrDefault();
     }
 
+    public async Task<Recipe?> GetRecipeByExternalIdAsync(string externalId)
+    {
+        var resp = await _http.GetAsync($"{_baseUrl}/recipes?external_id=eq.{Uri.EscapeDataString(externalId)}&select=*");
+        resp.EnsureSuccessStatusCode();
+        var list = JsonSerializer.Deserialize<List<Recipe>>(await resp.Content.ReadAsStringAsync(), JsonOpts);
+        return list?.FirstOrDefault();
+    }
+
     public async Task<Recipe> AddRecipeAsync(Recipe recipe)
     {
         var payload = new
@@ -119,7 +230,8 @@ public class SupabaseService
             recipe.CookTime,
             recipe.Servings,
             recipe.Difficulty,
-            recipe.ImagePath
+            recipe.ExternalId,
+            recipe.SourceUrl
         };
         var json = JsonSerializer.Serialize(payload, JsonOpts);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -156,6 +268,20 @@ public class SupabaseService
     {
         await _http.DeleteAsync($"{_baseUrl}/recipe_ingredients?recipe_id=eq.{recipeId}");
         await _http.DeleteAsync($"{_baseUrl}/recipes?id=eq.{recipeId}");
+    }
+
+    public async Task<List<Recipe>> GetPendingRecipesAsync()
+    {
+        var resp = await _http.GetAsync($"{_baseUrl}/recipes?status=eq.Pending&select=*&order=id");
+        resp.EnsureSuccessStatusCode();
+        return JsonSerializer.Deserialize<List<Recipe>>(await resp.Content.ReadAsStringAsync(), JsonOpts) ?? new();
+    }
+
+    public async Task UpdateRecipeStatusAsync(int recipeId, string status)
+    {
+        // Note: The 'status' column is currently missing from the recipes table.
+        // This method is a placeholder until the schema is updated.
+        await Task.CompletedTask;
     }
 
     // ───────────── RECIPE INGREDIENTS ─────────────
@@ -235,16 +361,26 @@ public class SupabaseService
     }
 
     /// <summary>
-    /// Fetches user by username, then verifies the BCrypt password hash client-side.
-    /// Returns null if user is not found or the password is incorrect.
+    /// Signs in with Supabase Auth (email + password), then loads the app profile row from public.users.
     /// </summary>
-    public async Task<User?> LoginAsync(string username, string password)
+    public async Task<User?> LoginAsync(string email, string password)
     {
-        var user = await GetUserByUsernameAsync(username);
-        if (user == null) return null;
+        await EnsureClientReadyAsync();
+        if (_client == null) return null;
 
-        bool valid = BC.Verify(password, user.PasswordHash);
-        return valid ? user : null;
+        try
+        {
+            await _client.Auth.SignInWithPassword(email, password);
+        }
+        catch (GotrueException)
+        {
+            return null;
+        }
+
+        ApplyAuthHeadersFromSession();
+        var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
+        ApplyPreferencesFromUser(profile);
+        return profile;
     }
 
     public async Task<int> GetUsersCountAsync()
@@ -263,26 +399,82 @@ public class SupabaseService
     }
 
     /// <summary>
-    /// Hashes the password with BCrypt before inserting into the database.
-    /// The first registered user automatically becomes admin.
+    /// Registers with Supabase Auth, then ensures a matching row exists in public.users for app data (favorites, etc.).
     /// </summary>
-    public async Task<User> RegisterUserAsync(string username, string password)
+    public async Task<RegisterResult> RegisterUserAsync(string email, string password)
     {
-        var usersCount = await GetUsersCountAsync();
-        var passwordHash = BC.HashPassword(password);
+        await EnsureClientReadyAsync();
+        if (_client == null)
+            return new RegisterResult(null, "Could not initialize auth.", false);
 
+        try
+        {
+            var session = await _client.Auth.SignUp(email, password);
+            if (session == null)
+            {
+                return new RegisterResult(null, null, true);
+            }
+
+            ApplyAuthHeadersFromSession();
+            var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
+            return new RegisterResult(profile, null, false);
+        }
+        catch (GotrueException ex)
+        {
+            var msg = ex.Message ?? "Registration failed.";
+            if (msg.Contains("already registered", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("User already registered", StringComparison.OrdinalIgnoreCase))
+            {
+                return new RegisterResult(null, "This email is already registered.", false);
+            }
+            return new RegisterResult(null, msg, false);
+        }
+    }
+
+    private async Task<User> InsertAppUserProfileAsync(string email)
+    {
         var payload = new
         {
-            Username = username,
-            PasswordHash = passwordHash,
-            IsAdmin = usersCount == 0  // first user is admin
+            Username = email,
+            PasswordHash = AuthManagedPasswordPlaceholder,
+            Role = "User"
         };
         var json = JsonSerializer.Serialize(payload, JsonOpts);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         var resp = await _http.PostAsync($"{_baseUrl}/users", content);
         resp.EnsureSuccessStatusCode();
         var list = JsonSerializer.Deserialize<List<User>>(await resp.Content.ReadAsStringAsync(), JsonOpts);
-        return list?.FirstOrDefault() ?? new User { Username = username };
+        return list?.FirstOrDefault() ?? new User { Username = email };
+    }
+
+    /// <summary>
+    /// Verifies the current password by re-authenticating, then sets the new password via Supabase Auth.
+    /// </summary>
+    public async Task<bool> ChangePasswordWithAuthAsync(string email, string currentPassword, string newPassword)
+    {
+        await EnsureClientReadyAsync();
+        if (_client == null) return false;
+
+        try
+        {
+            await _client.Auth.SignInWithPassword(email, currentPassword);
+        }
+        catch (GotrueException)
+        {
+            return false;
+        }
+
+        ApplyAuthHeadersFromSession();
+        try
+        {
+            await _client.Auth.Update(new Supabase.Gotrue.UserAttributes { Password = newPassword });
+        }
+        catch (GotrueException)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     // ───────────── PROFILE MANAGEMENT ─────────────
@@ -290,19 +482,6 @@ public class SupabaseService
     public async Task UpdateUserDisplayNameAsync(int userId, string displayName)
     {
         var payload = new { DisplayName = displayName };
-        var json = JsonSerializer.Serialize(payload, JsonOpts);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var req = new HttpRequestMessage(HttpMethod.Patch, $"{_baseUrl}/users?id=eq.{userId}")
-        {
-            Content = content
-        };
-        var resp = await _http.SendAsync(req);
-        resp.EnsureSuccessStatusCode();
-    }
-
-    public async Task UpdateUserPasswordAsync(int userId, string newPasswordHash)
-    {
-        var payload = new { PasswordHash = newPasswordHash };
         var json = JsonSerializer.Serialize(payload, JsonOpts);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         var req = new HttpRequestMessage(HttpMethod.Patch, $"{_baseUrl}/users?id=eq.{userId}")

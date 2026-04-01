@@ -1,4 +1,4 @@
-﻿using HoundsBite.Services;
+using HoundsBite.Services;
 using System.Text.RegularExpressions;
 
 namespace HoundsBite.Views;
@@ -87,20 +87,27 @@ public partial class RegisterPopup : ContentPage
             return;
         }
 
-        // Check if username is taken in Supabase
-        var existing = await _supa.GetUserByUsernameAsync(email);
-        if (existing != null)
+        var result = await _supa.RegisterUserAsync(email, password);
+
+        if (result.NeedsEmailConfirmation)
         {
-            await DisplayAlert("Error", "Email already exists.", "OK");
+            await DisplayAlert(
+                "Check your email",
+                "We sent a confirmation link. After you confirm, you can sign in.",
+                "OK");
+            await Navigation.PopModalAsync();
             return;
         }
 
-        // RegisterUserAsync handles BCrypt hashing and admin-first-user logic
-        var newUser = await _supa.RegisterUserAsync(email, password);
+        if (result.User == null)
+        {
+            await DisplayAlert("Error", result.ErrorMessage ?? "Registration failed.", "OK");
+            return;
+        }
 
         await DisplayAlert(
             "Success",
-            newUser.IsAdmin ? "Account created. You are the admin!" : "Account created!",
+            "Account created! You can now log in.",
             "OK");
 
         await Navigation.PopModalAsync();

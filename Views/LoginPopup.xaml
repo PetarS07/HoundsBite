@@ -19,7 +19,8 @@
                    TextColor="White"/>
 
             <Entry x:Name="UsernameEntry"
-                   Placeholder="Username"
+                   Placeholder="Email"
+                   Keyboard="Email"
                    TextColor="White"/>
 
             <Entry x:Name="PasswordEntry"
