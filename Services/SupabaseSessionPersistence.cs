@@ -23,7 +23,7 @@ public sealed class SupabaseSessionPersistence : IGotrueSessionPersistence<Sessi
         try
         {
             var json = JsonSerializer.Serialize(session, JsonOpts);
-            SecureStorage.Default.SetAsync(StorageKey, json).GetAwaiter().GetResult();
+            Preferences.Default.Set(StorageKey, json);
         }
         catch
         {
@@ -35,7 +35,7 @@ public sealed class SupabaseSessionPersistence : IGotrueSessionPersistence<Sessi
     {
         try
         {
-            SecureStorage.Default.Remove(StorageKey);
+            Preferences.Default.Remove(StorageKey);
         }
         catch
         {
@@ -47,7 +47,7 @@ public sealed class SupabaseSessionPersistence : IGotrueSessionPersistence<Sessi
     {
         try
         {
-            var json = SecureStorage.Default.GetAsync(StorageKey).GetAwaiter().GetResult();
+            var json = Preferences.Default.Get(StorageKey, null as string);
             if (string.IsNullOrEmpty(json))
                 return null;
             return JsonSerializer.Deserialize<Session>(json, JsonOpts);

@@ -102,6 +102,11 @@ public partial class RegisterPopup : ContentPage
             await DisplayAlert("Timeout", "The server took too long to respond. Check your connection and try again.", "OK");
             return;
         }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"An unexpected error occurred: {ex.Message}", "OK");
+            return;
+        }
         finally
         {
             RegisterButton.IsEnabled = true;

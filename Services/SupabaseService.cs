@@ -110,9 +110,12 @@ public class SupabaseService
         if (string.IsNullOrEmpty(email))
             return;
 
-        var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
-        ApplyPreferencesFromUser(profile);
-        MessagingCenter.Send<object>(this, "LoginChanged");
+        var profile = await GetUserByUsernameAsync(email);
+        if (profile != null)
+        {
+            ApplyPreferencesFromUser(profile);
+            MessagingCenter.Send<object>(this, "LoginChanged");
+        }
     }
 
     private static void ApplyPreferencesFromUser(User user)
@@ -356,7 +359,11 @@ public class SupabaseService
     public async Task<User?> GetUserByUsernameAsync(string username)
     {
         var resp = await _http.GetAsync($"{_baseUrl}/users?username=eq.{Uri.EscapeDataString(username)}&select=*");
-        resp.EnsureSuccessStatusCode();
+        if (!resp.IsSuccessStatusCode)
+        {
+            var err = await resp.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"HTTP {(int)resp.StatusCode} GetUserByUsernameAsync: {err}");
+        }
         var list = JsonSerializer.Deserialize<List<User>>(await resp.Content.ReadAsStringAsync(), JsonOpts);
         return list?.FirstOrDefault();
     }
@@ -398,7 +405,26 @@ public class SupabaseService
         }
 
         ApplyAuthHeadersFromSession();
-        var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
+
+        // Build a minimal profile from the Auth session as a safe fallback.
+        // This ensures login ALWAYS succeeds even if public.users is unavailable.
+        var authUser = _client.Auth.CurrentUser;
+        var fallbackProfile = new User
+        {
+            Username = authUser?.Email ?? email,
+            IsAdmin = false
+        };
+
+        User profile;
+        try
+        {
+            profile = await GetUserByUsernameAsync(email) ?? fallbackProfile;
+        }
+        catch (HttpRequestException)
+        {
+            profile = fallbackProfile;
+        }
+
         ApplyPreferencesFromUser(profile);
         MessagingCenter.Send<object>(this, "LoginChanged");
         return new LoginResult(profile, null, false);
@@ -438,7 +464,25 @@ public class SupabaseService
             }
 
             ApplyAuthHeadersFromSession();
-            var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
+
+            // Build a minimal profile from the Auth session as a safe fallback.
+            var sessionUser = session.User;
+            var fallbackProfile = new User
+            {
+                Username = sessionUser?.Email ?? email,
+                IsAdmin = false
+            };
+
+            User profile;
+            try
+            {
+                profile = await GetUserByUsernameAsync(email) ?? fallbackProfile;
+            }
+            catch (HttpRequestException)
+            {
+                profile = fallbackProfile;
+            }
+
             ApplyPreferencesFromUser(profile);
             MessagingCenter.Send<object>(this, "LoginChanged");
             return new RegisterResult(profile, null, false);
@@ -464,24 +508,9 @@ public class SupabaseService
             // Fallback: show a generic message rather than raw JSON
             return new RegisterResult(null, "Registration failed. Please try again later.", false);
         }
-
     }
 
-    private async Task<User> InsertAppUserProfileAsync(string email)
-    {
-        var payload = new
-        {
-            Username = email,
-            PasswordHash = AuthManagedPasswordPlaceholder,
-            Role = "User"
-        };
-        var json = JsonSerializer.Serialize(payload, JsonOpts);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var resp = await _http.PostAsync($"{_baseUrl}/users", content);
-        resp.EnsureSuccessStatusCode();
-        var list = JsonSerializer.Deserialize<List<User>>(await resp.Content.ReadAsStringAsync(), JsonOpts);
-        return list?.FirstOrDefault() ?? new User { Username = email };
-    }
+
 
     /// <summary>
     /// Verifies the current password by re-authenticating, then sets the new password via Supabase Auth.
