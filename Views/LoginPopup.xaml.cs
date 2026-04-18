@@ -1,3 +1,4 @@
+using HoundsBite.Models;
 using HoundsBite.Services;
 using Microsoft.Maui.Storage;
 
@@ -27,19 +28,40 @@ public partial class LoginPopup : ContentPage
             return;
         }
 
-        var user = await _supa.LoginAsync(email, password);
+        // Disable the button to prevent double-tap freezing
+        LoginButton.IsEnabled = false;
+        LoginButton.Text = "Logging in…";
 
-        if (user == null)
+        try
         {
-            await DisplayAlert("Error", "Invalid email or password.", "OK");
-            return;
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(15));
+
+            LoginResult? result = null;
+            try
+            {
+                result = await _supa.LoginWithResultAsync(email, password).WaitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                await DisplayAlert("Timeout", "The server took too long to respond. Check your connection and try again.", "OK");
+                return;
+            }
+
+            if (result?.User == null)
+            {
+                await DisplayAlert("Error", result?.ErrorMessage ?? "Login failed.", "OK");
+                return;
+            }
+
+            var welcome = string.IsNullOrWhiteSpace(result.User.DisplayName) ? result.User.Username : result.User.DisplayName!;
+            await DisplayAlert("Success", $"Welcome, {welcome}!", "OK");
+            await Navigation.PopModalAsync();
         }
-
-        MessagingCenter.Send<object>(this, "LoginChanged");
-
-        var welcome = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName!;
-        await DisplayAlert("Success", $"Welcome, {welcome}!", "OK");
-        await Navigation.PopModalAsync();
+        finally
+        {
+            LoginButton.IsEnabled = true;
+            LoginButton.Text = "Login";
+        }
     }
 
     private async void OnRegisterClicked(object sender, EventArgs e)

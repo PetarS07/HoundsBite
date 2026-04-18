@@ -28,7 +28,8 @@
                    Placeholder="Password"
                    TextColor="White"/>
 
-            <Button Text="Login"
+            <Button x:Name="LoginButton"
+                    Text="Login"
                     Clicked="OnLoginClicked"
                     BackgroundColor="#8B0000"
                     TextColor="White"/>

@@ -76,15 +76,12 @@ public partial class UserPage : ContentPage
             return;
         }
 
-        var user = await _supa.LoginAsync(email, password);
-
-        if (user == null)
+        var result = await _supa.LoginWithResultAsync(email, password);
+        if (result.User == null)
         {
-            await DisplayAlert("Error", "Invalid email or password.", "OK");
+            await DisplayAlert("Error", result.ErrorMessage ?? "Login failed.", "OK");
             return;
         }
-
-        MessagingCenter.Send<object>(this, "LoginChanged");
     }
 
     private async void OnRegisterClicked(object sender, EventArgs e)

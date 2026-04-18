@@ -87,7 +87,26 @@ public partial class RegisterPopup : ContentPage
             return;
         }
 
-        var result = await _supa.RegisterUserAsync(email, password);
+        RegisterButton.IsEnabled = false;
+        RegisterButton.Text = "Creating…";
+        RegisterButton.IsEnabled = false;
+
+        RegisterResult result;
+        try
+        {
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(20));
+            result = await _supa.RegisterUserAsync(email, password).WaitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            await DisplayAlert("Timeout", "The server took too long to respond. Check your connection and try again.", "OK");
+            return;
+        }
+        finally
+        {
+            RegisterButton.IsEnabled = true;
+            RegisterButton.Text = "Create Account";
+        }
 
         if (result.NeedsEmailConfirmation)
         {
@@ -107,7 +126,7 @@ public partial class RegisterPopup : ContentPage
 
         await DisplayAlert(
             "Success",
-            "Account created! You can now log in.",
+            "Account created! You're now signed in.",
             "OK");
 
         await Navigation.PopModalAsync();

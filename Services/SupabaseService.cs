@@ -11,6 +11,7 @@ using Supabase.Gotrue.Exceptions;
 namespace HoundsBite.Services;
 
 public sealed record RegisterResult(User? User, string? ErrorMessage, bool NeedsEmailConfirmation);
+public sealed record LoginResult(User? User, string? ErrorMessage, bool NeedsEmailConfirmation);
 
 public class SupabaseService
 {
@@ -365,22 +366,42 @@ public class SupabaseService
     /// </summary>
     public async Task<User?> LoginAsync(string email, string password)
     {
+        var result = await LoginWithResultAsync(email, password);
+        return result.User;
+    }
+
+    public async Task<LoginResult> LoginWithResultAsync(string email, string password)
+    {
         await EnsureClientReadyAsync();
-        if (_client == null) return null;
+        if (_client == null)
+            return new LoginResult(null, "Could not initialize auth.", false);
 
         try
         {
             await _client.Auth.SignInWithPassword(email, password);
         }
-        catch (GotrueException)
+        catch (GotrueException ex)
         {
-            return null;
+            var msg = ex.Message ?? "Login failed.";
+
+            var needsConfirm =
+                msg.Contains("confirm", StringComparison.OrdinalIgnoreCase) &&
+                msg.Contains("email", StringComparison.OrdinalIgnoreCase);
+
+            if (needsConfirm)
+                return new LoginResult(null, "Please confirm your email address, then try again.", true);
+
+            if (ex.StatusCode == 429 || msg.Contains("rate", StringComparison.OrdinalIgnoreCase))
+                return new LoginResult(null, "Too many attempts. Please wait a bit and try again.", false);
+
+            return new LoginResult(null, "Invalid email or password.", false);
         }
 
         ApplyAuthHeadersFromSession();
         var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
         ApplyPreferencesFromUser(profile);
-        return profile;
+        MessagingCenter.Send<object>(this, "LoginChanged");
+        return new LoginResult(profile, null, false);
     }
 
     public async Task<int> GetUsersCountAsync()
@@ -412,23 +433,38 @@ public class SupabaseService
             var session = await _client.Auth.SignUp(email, password);
             if (session == null)
             {
+                // When email confirmation is enabled, Supabase returns no session until confirmed.
                 return new RegisterResult(null, null, true);
             }
 
             ApplyAuthHeadersFromSession();
             var profile = await GetUserByUsernameAsync(email) ?? await InsertAppUserProfileAsync(email);
+            ApplyPreferencesFromUser(profile);
+            MessagingCenter.Send<object>(this, "LoginChanged");
             return new RegisterResult(profile, null, false);
         }
         catch (GotrueException ex)
         {
             var msg = ex.Message ?? "Registration failed.";
+
+            if (msg.Contains("over_email_send_rate_limit", StringComparison.OrdinalIgnoreCase) ||
+                ex.StatusCode == 429)
+            {
+                return new RegisterResult(null,
+                    "Too many registration attempts. Please wait a few minutes and try again.", false);
+            }
+
             if (msg.Contains("already registered", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("User already registered", StringComparison.OrdinalIgnoreCase))
+                msg.Contains("User already registered", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("email_exists", StringComparison.OrdinalIgnoreCase))
             {
                 return new RegisterResult(null, "This email is already registered.", false);
             }
-            return new RegisterResult(null, msg, false);
+
+            // Fallback: show a generic message rather than raw JSON
+            return new RegisterResult(null, "Registration failed. Please try again later.", false);
         }
+
     }
 
     private async Task<User> InsertAppUserProfileAsync(string email)

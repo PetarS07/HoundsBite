@@ -26,41 +26,67 @@ public partial class NavBar : ContentView
     public NavBar()
     {
         InitializeComponent();
-        CheckAdminVisibility();
+        UpdateLayout();
         ApplyActiveTab(NavTab.Home);
 
-        // Listen for login changes to update Admin tab visibility
+        // Listen for login changes to update tab visibility and column layout
         MessagingCenter.Subscribe<object>(this, "LoginChanged", (sender) =>
         {
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                CheckAdminVisibility();
-            });
+            MainThread.BeginInvokeOnMainThread(UpdateLayout);
         });
     }
 
-    private void CheckAdminVisibility()
+    private void UpdateLayout()
     {
-        // Simple logic: check if the logged in user in Preferences is admin
-        // Note: In a real app, we'd use a more robust State Management / Auth Service
-        bool isAdmin = Preferences.Get("IsAdminUser", false);
-        AdminTab.IsVisible = isAdmin;
+        bool isLoggedIn = Preferences.Get("LoggedUserId", 0) != 0;
+        bool isAdmin    = Preferences.Get("IsAdminUser", false);
 
-        // Update grid columns to avoid empty space when admin is hidden
-        if (isAdmin)
+        IngredientsTab.IsVisible = isLoggedIn;
+        AdminTab.IsVisible       = isAdmin;
+
+        // Dynamically reposition tabs and set the correct number of columns
+        // so the bar always fills evenly with no gaps.
+        if (isLoggedIn && isAdmin)
         {
-            RootGrid.ColumnDefinitions = new ColumnDefinitionCollection 
-            { 
-                new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star) 
-            };
+            // 5 tabs: Home(0) Ingredients(1) Recipes(2) Profile(3) Admin(4)
+            Grid.SetColumn(IngredientsTab, 1);
+            Grid.SetColumn(RecipesTab,     2);
+            Grid.SetColumn(ProfileTab,     3);
+            Grid.SetColumn(AdminTab,       4);
+            SetColumns(5);
+        }
+        else if (isLoggedIn)
+        {
+            // 4 tabs: Home(0) Ingredients(1) Recipes(2) Profile(3)
+            Grid.SetColumn(IngredientsTab, 1);
+            Grid.SetColumn(RecipesTab,     2);
+            Grid.SetColumn(ProfileTab,     3);
+            SetColumns(4);
+        }
+        else if (isAdmin)
+        {
+            // 4 tabs: Home(0) Recipes(1) Profile(2) Admin(3)
+            Grid.SetColumn(RecipesTab, 1);
+            Grid.SetColumn(ProfileTab, 2);
+            Grid.SetColumn(AdminTab,   3);
+            SetColumns(4);
         }
         else
         {
-            RootGrid.ColumnDefinitions = new ColumnDefinitionCollection 
-            { 
-                new(GridLength.Star), new(GridLength.Star), new(GridLength.Star), new(GridLength.Star)
-            };
+            // 3 tabs: Home(0) Recipes(1) Profile(2)
+            Grid.SetColumn(RecipesTab, 1);
+            Grid.SetColumn(ProfileTab, 2);
+            SetColumns(3);
         }
+
+    }
+
+    private void SetColumns(int count)
+    {
+        var cols = new ColumnDefinitionCollection();
+        for (int i = 0; i < count; i++)
+            cols.Add(new ColumnDefinition(GridLength.Star));
+        RootGrid.ColumnDefinitions = cols;
     }
 
     // ── Tab styling ────────────────────────────────────────────────────────
