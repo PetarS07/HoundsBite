@@ -1,4 +1,4 @@
-﻿using HoundsBite.Services;
+using HoundsBite.Services;
 using System.Text.RegularExpressions;
 
 namespace HoundsBite.Views;
@@ -87,20 +87,46 @@ public partial class RegisterPopup : ContentPage
             return;
         }
 
-        // Check if username is taken in Supabase
-        var existing = await _supa.GetUserByUsernameAsync(email);
-        if (existing != null)
+        RegisterButton.IsEnabled = false;
+        RegisterButton.Text = "Creating…";
+        RegisterButton.IsEnabled = false;
+
+        RegisterResult result;
+        try
         {
-            await DisplayAlert("Error", "Email already exists.", "OK");
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(20));
+            result = await _supa.RegisterUserAsync(email, password).WaitAsync(cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            await DisplayAlert("Timeout", "The server took too long to respond. Check your connection and try again.", "OK");
+            return;
+        }
+        finally
+        {
+            RegisterButton.IsEnabled = true;
+            RegisterButton.Text = "Create Account";
+        }
+
+        if (result.NeedsEmailConfirmation)
+        {
+            await DisplayAlert(
+                "Check your email",
+                "We sent a confirmation link. After you confirm, you can sign in.",
+                "OK");
+            await Navigation.PopModalAsync();
             return;
         }
 
-        // RegisterUserAsync handles BCrypt hashing and admin-first-user logic
-        var newUser = await _supa.RegisterUserAsync(email, password);
+        if (result.User == null)
+        {
+            await DisplayAlert("Error", result.ErrorMessage ?? "Registration failed.", "OK");
+            return;
+        }
 
         await DisplayAlert(
             "Success",
-            newUser.IsAdmin ? "Account created. You are the admin!" : "Account created!",
+            "Account created! You're now signed in.",
             "OK");
 
         await Navigation.PopModalAsync();

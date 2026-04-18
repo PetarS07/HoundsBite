@@ -12,14 +12,19 @@
 
                 <!-- Hero Section -->
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Welcome to"
+                    
+                        <Label Text="Welcome to"
                            FontSize="16"
-                           TextColor="{StaticResource TextSecondary}" />
-                    <Label Text="Hound's Bite"
+                           TextColor="{StaticResource TextSecondary}"
+                           HorizontalOptions="Center" />
+                        <Label Text="Hound's Bite"
                            Style="{StaticResource HeaderLabel}"
-                           TextColor="{StaticResource Primary}" />
+                           TextColor="{StaticResource Primary}"
+                           HorizontalOptions="Center" />
+                    
+                    
 
-                    <Button x:Name="LoginButton"
+                    <!-- <Button x:Name="LoginButton"
                             Text="Login"
                             Clicked="OnLoginClicked"
                             HorizontalOptions="End"
@@ -27,12 +32,13 @@
                             WidthRequest="100"
                             IsVisible="False"
                             Margin="0,8,0,0"/>
+                            -->
                 </VerticalStackLayout>
 
                 <!-- Dashboard Grid -->
-                <Label Text="Quick Access"
+                <!--<Label Text="Quick Access"
                        Style="{StaticResource CardTitle}"
-                       Margin="0,10,0,0" />
+                       Margin="0,10,0,0" />-->
 
                 <FlexLayout Wrap="Wrap" JustifyContent="SpaceBetween" AlignItems="Start">
 

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="HoundsBite.Views.AdminPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:HoundsBite.Controls"
+             xmlns:models="clr-namespace:HoundsBite.Models"
+             BackgroundColor="#121212">
+
+    <Grid RowDefinitions="Auto, *, Auto">
+        <!-- Header -->
+        <VerticalStackLayout Padding="20,40,20,10" Spacing="5">
+            <Label Text="Admin Dashboard" 
+                   TextColor="White" 
+                   FontSize="28" 
+                   FontAttributes="Bold"/>
+            <Label Text="Manage community recipes and submissions" 
+                   TextColor="#888888" 
+                   FontSize="14"/>
+        </VerticalStackLayout>
+
+        <!-- Main Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+                
+                <Label Text="Pending Approvals" 
+                       TextColor="White" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       Margin="0,10,0,0"/>
+
+                <ActivityIndicator x:Name="LoadingIndicator" 
+                                 IsRunning="False" 
+                                 IsVisible="False" 
+                                 Color="#7C6FFF" 
+                                 HorizontalOptions="Center"/>
+
+                <Label x:Name="NoPendingLabel" 
+                       Text="No recipes currently pending review." 
+                       TextColor="#666666" 
+                       HorizontalOptions="Center" 
+                       Margin="0,20"
+                       IsVisible="False"/>
+
+                <CollectionView x:Name="PendingList">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:Recipe">
+                            <Border Margin="0,0,0,12" 
+                                    Padding="16" 
+                                    BackgroundColor="#1E1E1E" 
+                                    Stroke="#2A2A2A">
+                                <Border.StrokeShape>
+                                    <RoundRectangle CornerRadius="12"/>
+                                </Border.StrokeShape>
+                                <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto, Auto">
+                                    <Label Text="{Binding Name}" 
+                                           TextColor="White" 
+                                           FontSize="16" 
+                                           FontAttributes="Bold"/>
+                                    <Label Grid.Row="1" 
+                                           Text="{Binding Type}" 
+                                           TextColor="#7C6FFF" 
+                                           FontSize="12"/>
+                                    <Label Grid.Row="2" 
+                                           Text="{Binding Description}" 
+                                           TextColor="#AAAAAA" 
+                                           FontSize="13" 
+                                           MaxLines="2" 
+                                           LineBreakMode="TailTruncation"
+                                           Margin="0,4,0,0"/>
+                                    
+                                    <HorizontalStackLayout Grid.Column="1" Grid.RowSpan="3" Spacing="8" VerticalOptions="Center">
+                                        <Button Text="Reject" 
+                                                Clicked="OnRejectClicked" 
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="#442222" 
+                                                TextColor="#FF5555" 
+                                                FontSize="12" 
+                                                HeightRequest="36" 
+                                                Padding="12,0"/>
+                                        <Button Text="Approve" 
+                                                Clicked="OnApproveClicked" 
+                                                CommandParameter="{Binding .}"
+                                                BackgroundColor="#224422" 
+                                                TextColor="#55FF55" 
+                                                FontSize="12" 
+                                                HeightRequest="36" 
+                                                Padding="12,0"/>
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <BoxView HeightRequest="1" Color="#2A2A2A" Margin="0,10"/>
+
+                <Label Text="Quick Links" 
+                       TextColor="White" 
+                       FontSize="20" 
+                       FontAttributes="Bold"/>
+                
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <Button Text="Manage Ingredients" 
+                            Clicked="OnManageIngredientsClicked"
+                            BackgroundColor="#1E1E1E"
+                            TextColor="White"
+                            BorderColor="#2A2A2A"
+                            BorderWidth="1"
+                            HeightRequest="80"/>
+                    <Button Grid.Column="1" 
+                            Text="Manage All Recipes" 
+                            Clicked="OnManageRecipesClicked"
+                            BackgroundColor="#1E1E1E"
+                            TextColor="White"
+                            BorderColor="#2A2A2A"
+                            BorderWidth="1"
+                            HeightRequest="80"/>
+                </Grid>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Navigation Placeholder -->
+        <controls:NavBar Grid.Row="2" ActiveTab="Admin"/>
+    </Grid>
+</ContentPage>

@@ -20,6 +20,7 @@
     <ShellContent Route="user" ContentTemplate="{DataTemplate views:UserPage}" />
 
     <!-- Admin Routes -->
+    <ShellContent Route="admin-dashboard" ContentTemplate="{DataTemplate views:AdminPage}" />
     <ShellContent Route="admin-ingredients" ContentTemplate="{DataTemplate views:IngredientsPage}" />
     <ShellContent Route="admin-recipes" ContentTemplate="{DataTemplate views:RecipesPage}" />
 

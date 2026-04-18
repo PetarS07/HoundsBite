@@ -1,6 +1,6 @@
 namespace HoundsBite.Controls;
 
-public enum NavTab { Home, Ingredients, Recipes, Profile }
+public enum NavTab { Home, Ingredients, Recipes, Profile, Admin }
 
 public partial class NavBar : ContentView
 {
@@ -26,7 +26,67 @@ public partial class NavBar : ContentView
     public NavBar()
     {
         InitializeComponent();
+        UpdateLayout();
         ApplyActiveTab(NavTab.Home);
+
+        // Listen for login changes to update tab visibility and column layout
+        MessagingCenter.Subscribe<object>(this, "LoginChanged", (sender) =>
+        {
+            MainThread.BeginInvokeOnMainThread(UpdateLayout);
+        });
+    }
+
+    private void UpdateLayout()
+    {
+        bool isLoggedIn = Preferences.Get("LoggedUserId", 0) != 0;
+        bool isAdmin    = Preferences.Get("IsAdminUser", false);
+
+        IngredientsTab.IsVisible = isLoggedIn;
+        AdminTab.IsVisible       = isAdmin;
+
+        // Dynamically reposition tabs and set the correct number of columns
+        // so the bar always fills evenly with no gaps.
+        if (isLoggedIn && isAdmin)
+        {
+            // 5 tabs: Home(0) Ingredients(1) Recipes(2) Profile(3) Admin(4)
+            Grid.SetColumn(IngredientsTab, 1);
+            Grid.SetColumn(RecipesTab,     2);
+            Grid.SetColumn(ProfileTab,     3);
+            Grid.SetColumn(AdminTab,       4);
+            SetColumns(5);
+        }
+        else if (isLoggedIn)
+        {
+            // 4 tabs: Home(0) Ingredients(1) Recipes(2) Profile(3)
+            Grid.SetColumn(IngredientsTab, 1);
+            Grid.SetColumn(RecipesTab,     2);
+            Grid.SetColumn(ProfileTab,     3);
+            SetColumns(4);
+        }
+        else if (isAdmin)
+        {
+            // 4 tabs: Home(0) Recipes(1) Profile(2) Admin(3)
+            Grid.SetColumn(RecipesTab, 1);
+            Grid.SetColumn(ProfileTab, 2);
+            Grid.SetColumn(AdminTab,   3);
+            SetColumns(4);
+        }
+        else
+        {
+            // 3 tabs: Home(0) Recipes(1) Profile(2)
+            Grid.SetColumn(RecipesTab, 1);
+            Grid.SetColumn(ProfileTab, 2);
+            SetColumns(3);
+        }
+
+    }
+
+    private void SetColumns(int count)
+    {
+        var cols = new ColumnDefinitionCollection();
+        for (int i = 0; i < count; i++)
+            cols.Add(new ColumnDefinition(GridLength.Star));
+        RootGrid.ColumnDefinitions = cols;
     }
 
     // ── Tab styling ────────────────────────────────────────────────────────
@@ -37,6 +97,7 @@ public partial class NavBar : ContentView
         SetTab(IngredientsPill, IngredientsIcon, IngredientsLabel, false);
         SetTab(RecipesPill, RecipesIcon, RecipesLabel, false);
         SetTab(ProfilePill, ProfileIcon, ProfileLabel, false);
+        SetTab(AdminPill, AdminIcon, AdminLabel, false);
 
         // Highlight active
         switch (tab)
@@ -45,6 +106,7 @@ public partial class NavBar : ContentView
             case NavTab.Ingredients: SetTab(IngredientsPill, IngredientsIcon, IngredientsLabel, true); break;
             case NavTab.Recipes:     SetTab(RecipesPill, RecipesIcon, RecipesLabel, true); break;
             case NavTab.Profile:     SetTab(ProfilePill, ProfileIcon, ProfileLabel, true); break;
+            case NavTab.Admin:       SetTab(AdminPill, AdminIcon, AdminLabel, true); break;
         }
     }
 
@@ -66,6 +128,15 @@ public partial class NavBar : ContentView
     private async void OnIngredientsTapped(object sender, TappedEventArgs e)
     {
         if (ActiveTab == NavTab.Ingredients) return;
+        if (Preferences.Get("LoggedUserId", 0) == 0)
+        {
+            await Shell.Current.DisplayAlert(
+                "Login required",
+                "Please log in from Profile to view your kitchen inventory.",
+                "OK");
+            return;
+        }
+
         await Shell.Current.GoToAsync("//display-ingredients");
     }
 
@@ -79,5 +150,11 @@ public partial class NavBar : ContentView
     {
         if (ActiveTab == NavTab.Profile) return;
         await Shell.Current.GoToAsync("//user");
+    }
+
+    private async void OnAdminTapped(object sender, TappedEventArgs e)
+    {
+        if (ActiveTab == NavTab.Admin) return;
+        await Shell.Current.GoToAsync("//admin-dashboard");
     }
 }

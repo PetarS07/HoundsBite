@@ -168,6 +168,23 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- Source Section (Only if External) -->
+            <Border x:Name="SourcePanel" Style="{StaticResource CardView}" Padding="20" IsVisible="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="🌐 Source" 
+                           Style="{StaticResource CardTitle}"
+                           FontSize="18"/>
+                    <Label x:Name="SourceLabel"
+                           TextColor="{StaticResource Primary}"
+                           FontSize="13"
+                           TextDecorations="Underline">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSourceTapped"/>
+                        </Label.GestureRecognizers>
+                    </Label>
+                </VerticalStackLayout>
+            </Border>
+
         </VerticalStackLayout>
     </ScrollView>
 </ContentPage>

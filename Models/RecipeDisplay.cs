@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HoundsBite.Models;
 
-public class RecipeDisplay
+public class RecipeDisplay : Recipe
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Type { get; set; }
-    public string Description { get; set; }
-
-    public string IngredientNames { get; set; }
+    public string IngredientNames { get; set; } = string.Empty;
+    public string Icon { get; set; } = string.Empty;
+    public bool IsFavorite { get; set; }
+    public string FavoriteIcon { get; set; } = "☆";
+    
+    // API Integration Fields
+    public bool IsLocalMode { get; set; } = true;
+    public bool IsApiMode { get; set; } = false;
 }

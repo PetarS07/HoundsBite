@@ -1,7 +1,6 @@
 using HoundsBite.Services;
 using Microsoft.Maui.Storage;
 using System.Text.RegularExpressions;
-using BC = BCrypt.Net.BCrypt;
 
 namespace HoundsBite.Views;
 
@@ -28,6 +27,8 @@ public partial class UserPage : ContentPage
 
     private async void UpdateUI()
     {
+        await _supa.RestoreSessionFromStorageAsync();
+
         int userId = Preferences.Get("LoggedUserId", 0);
         bool isLoggedIn = userId > 0;
 
@@ -75,22 +76,12 @@ public partial class UserPage : ContentPage
             return;
         }
 
-        var user = await _supa.LoginAsync(email, password);
-
-        if (user == null)
+        var result = await _supa.LoginWithResultAsync(email, password);
+        if (result.User == null)
         {
-            await DisplayAlert("Error", "Invalid email or password.", "OK");
+            await DisplayAlert("Error", result.ErrorMessage ?? "Login failed.", "OK");
             return;
         }
-
-        string displayLabel = string.IsNullOrWhiteSpace(user.DisplayName) ? user.Username : user.DisplayName;
-
-        Preferences.Set("LoggedUserId", user.Id);
-        Preferences.Set("LoggedEmail", user.Username); // Save original email under the hood
-        Preferences.Set("LoggedDisplayName", displayLabel); 
-        Preferences.Set("IsAdmin", user.IsAdmin);
-
-        MessagingCenter.Send<object>(this, "LoginChanged");
     }
 
     private async void OnRegisterClicked(object sender, EventArgs e)
@@ -102,13 +93,17 @@ public partial class UserPage : ContentPage
     {
         bool confirm = await DisplayAlert("Logout", "Are you sure you want to log out?", "Yes", "No");
         if (confirm)
-        {
-            Preferences.Remove("LoggedUserId");
-            Preferences.Remove("LoggedEmail");
-            Preferences.Remove("LoggedDisplayName");
-            Preferences.Remove("IsAdmin");
-            MessagingCenter.Send<object>(this, "LoginChanged");
-        }
+            await PerformLogoutAsync();
+    }
+
+    private async Task PerformLogoutAsync()
+    {
+        await _supa.SignOutAsync();
+        Preferences.Remove("LoggedUserId");
+        Preferences.Remove("LoggedEmail");
+        Preferences.Remove("LoggedDisplayName");
+        Preferences.Remove("IsAdminUser");
+        MessagingCenter.Send<object>(this, "LoginChanged");
     }
 
     // ────────────────────────────────────────────────────────────────
@@ -280,22 +275,23 @@ public partial class UserPage : ContentPage
 
         try
         {
-            // Verify old password
-            var user = await _supa.GetUserByIdAsync(userId);
-            if (user == null || !BC.Verify(oldPass, user.PasswordHash))
+            var email = Preferences.Get("LoggedEmail", "");
+            if (string.IsNullOrEmpty(email))
             {
-                await DisplayAlert("Error", "Incorrect current password.", "OK");
+                await DisplayAlert("Error", "Could not read your email. Please log in again.", "OK");
                 return;
             }
 
-            // Hash new password and update
-            string newHash = BC.HashPassword(newPass);
-            await _supa.UpdateUserPasswordAsync(userId, newHash);
+            var ok = await _supa.ChangePasswordWithAuthAsync(email, oldPass, newPass);
+            if (!ok)
+            {
+                await DisplayAlert("Error", "Incorrect current password or the new password could not be saved.", "OK");
+                return;
+            }
 
             await DisplayAlert("Success", "Password changed successfully. Please log in again.", "OK");
-            
-            // Logout user to enforce new credentials
-            OnLogoutClicked(null, EventArgs.Empty);
+
+            await PerformLogoutAsync();
         }
         catch (Exception ex)
         {
