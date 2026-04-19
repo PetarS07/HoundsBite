@@ -213,6 +213,13 @@ public class SupabaseService
         return list?.FirstOrDefault();
     }
 
+    public async Task<List<Recipe>> GetRecipesByUserIdAsync(int userId)
+    {
+        var resp = await _http.GetAsync($"{_baseUrl}/recipes?user_id=eq.{userId}&select=*&order=id");
+        resp.EnsureSuccessStatusCode();
+        return JsonSerializer.Deserialize<List<Recipe>>(await resp.Content.ReadAsStringAsync(), JsonOpts) ?? new();
+    }
+
     public async Task<Recipe?> GetRecipeByExternalIdAsync(string externalId)
     {
         var resp = await _http.GetAsync($"{_baseUrl}/recipes?external_id=eq.{Uri.EscapeDataString(externalId)}&select=*");
@@ -235,7 +242,8 @@ public class SupabaseService
             recipe.Servings,
             recipe.Difficulty,
             recipe.ExternalId,
-            recipe.SourceUrl
+            recipe.SourceUrl,
+            recipe.ImagePath
         };
         var json = JsonSerializer.Serialize(payload, JsonOpts);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -256,7 +264,8 @@ public class SupabaseService
             recipe.PrepTime,
             recipe.CookTime,
             recipe.Servings,
-            recipe.Difficulty
+            recipe.Difficulty,
+            recipe.ImagePath
         };
         var json = JsonSerializer.Serialize(payload, JsonOpts);
         var content = new StringContent(json, Encoding.UTF8, "application/json");

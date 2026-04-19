@@ -29,6 +29,12 @@ public partial class HomePage : ContentPage
             IngredientsCard.IsVisible = false;
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
+
+            // Center Recipes card when it's the only one
+            Grid.SetColumn(RecipesCard, 0);
+            Grid.SetColumnSpan(RecipesCard, 2);
+            RecipesCard.HorizontalOptions = LayoutOptions.Center;
+            RecipesCard.WidthRequest = 180;
             return;
         }
 
@@ -40,10 +46,22 @@ public partial class HomePage : ContentPage
             IngredientsCard.IsVisible = false;
             AdminIngredientsCard.IsVisible = false;
             AdminRecipesCard.IsVisible = false;
+
+            // Reset centering
+            Grid.SetColumn(RecipesCard, 0);
+            Grid.SetColumnSpan(RecipesCard, 2);
+            RecipesCard.HorizontalOptions = LayoutOptions.Center;
+            RecipesCard.WidthRequest = 180;
             return;
         }
 
+        // Standard Layout
         IngredientsCard.IsVisible = true;
+        Grid.SetColumn(RecipesCard, 1);
+        Grid.SetColumnSpan(RecipesCard, 1);
+        RecipesCard.HorizontalOptions = LayoutOptions.Fill;
+        RecipesCard.WidthRequest = -1;
+
         AdminIngredientsCard.IsVisible = user.IsAdmin;
         AdminRecipesCard.IsVisible = user.IsAdmin;
     }

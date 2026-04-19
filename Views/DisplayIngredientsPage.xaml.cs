@@ -16,50 +16,18 @@ public partial class DisplayIngredientsPage : ContentPage
     private readonly List<IngredientListModel> _allLocal = new();
     private readonly List<IngredientListModel> _lastApiOnlyRows = new();
 
+    // Session-only kitchen for guests
+    private static List<IngredientListModel> _tempGuestKitchen = new();
+
+    private enum TabMode { MyKitchen, Search }
+    private TabMode _currentTab = TabMode.MyKitchen;
+
     private HashSet<int> _userIngredientIds = new();
     private int _currentUserId;
     private bool _isAdmin;
     private bool _refreshingDisplay;
     private bool _addPanelOpen;
 
-    private static string KitchenQtyKey(int userId) => $"KitchenQty_{userId}";
-
-    private static Dictionary<int, (string A, string U)> LoadQtyMap(int userId)
-    {
-        var json = Preferences.Get(KitchenQtyKey(userId), "");
-        if (string.IsNullOrEmpty(json)) return new Dictionary<int, (string, string)>();
-        try
-        {
-            var rows = JsonSerializer.Deserialize<List<QtyRow>>(json);
-            if (rows == null) return new Dictionary<int, (string, string)>();
-            return rows.ToDictionary(r => r.Id, r => (r.A ?? "", r.U ?? ""));
-        }
-        catch
-        {
-            return new Dictionary<int, (string, string)>();
-        }
-    }
-
-    private static void SaveQtyMap(int userId, Dictionary<int, (string A, string U)> map)
-    {
-        var rows = map.Select(kv => new QtyRow { Id = kv.Key, A = kv.Value.A, U = kv.Value.U }).ToList();
-        Preferences.Set(KitchenQtyKey(userId), JsonSerializer.Serialize(rows));
-    }
-
-    private void PersistQuantityFor(IngredientListModel item)
-    {
-        if (_currentUserId <= 0 || item.LocalId <= 0) return;
-        var map = LoadQtyMap(_currentUserId);
-        map[item.LocalId] = (item.Quantity ?? "", item.Unit ?? "");
-        SaveQtyMap(_currentUserId, map);
-    }
-
-    private sealed class QtyRow
-    {
-        public int Id { get; set; }
-        public string? A { get; set; }
-        public string? U { get; set; }
-    }
 
     public class IngredientListModel : INotifyPropertyChanged
     {
@@ -102,8 +70,6 @@ public partial class DisplayIngredientsPage : ContentPage
         private bool _isSelected;
         private bool _isLoggedIn;
         private bool _isAdmin;
-        private string _quantity = "";
-        private string _unit = "";
 
         public string ImageUrl
         {
@@ -149,24 +115,12 @@ public partial class DisplayIngredientsPage : ContentPage
             }
         }
 
-        public string Quantity
-        {
-            get => _quantity;
-            set { if (_quantity != value) { _quantity = value ?? ""; OnPropertyChanged(); } }
-        }
-
-        public string Unit
-        {
-            get => _unit;
-            set { if (_unit != value) { _unit = value ?? ""; OnPropertyChanged(); } }
-        }
-
         public bool HasImage => !string.IsNullOrWhiteSpace(ImageUrl);
 
         public bool ShowDeleteButton =>
             IsLoggedIn && (FromApiOnly || IsSelected || (IsAdmin && LocalId > 0 && !FromApiOnly));
 
-        public string KitchenButtonText => _isSelected ? "✓ In kitchen" : "+ Kitchen";
+        public string KitchenButtonText => _isSelected ? "✓Added to Kitchen" : "Add to Kitchen";
         public Color KitchenButtonColor => _isSelected
             ? Color.FromArgb("#2E7D32")
             : Color.FromArgb("#1E3A5F");
@@ -188,16 +142,6 @@ public partial class DisplayIngredientsPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        if (Preferences.Get("LoggedUserId", 0) == 0)
-        {
-            await DisplayAlert(
-                "Login required",
-                "Please log in from Profile to view your kitchen inventory.",
-                "OK");
-            await Shell.Current.GoToAsync("//home");
-            return;
-        }
-
         _currentUserId = Preferences.Get("LoggedUserId", 0);
         _isAdmin = Preferences.Get("UserRole", "") == "Admin";
         _ = LoadLocalCacheAndRefreshAsync();
@@ -212,32 +156,32 @@ public partial class DisplayIngredientsPage : ContentPage
 
             var dbIngredients = await _supa.GetAllIngredientsAsync();
             var isLoggedIn = _currentUserId > 0;
-            var qtyMap = isLoggedIn ? LoadQtyMap(_currentUserId) : new Dictionary<int, (string, string)>();
 
             if (isLoggedIn)
-                _userIngredientIds = (await _supa.GetUserIngredientIdsAsync(_currentUserId)).ToHashSet();
-            else
-                _userIngredientIds = new HashSet<int>();
-
-            foreach (var ing in dbIngredients)
             {
-                int.TryParse(ing.ExternalId, out var extNum);
-                if (!qtyMap.TryGetValue(ing.Id, out var qu))
-                    qu = ("", "");
-                _allLocal.Add(new IngredientListModel
+                _userIngredientIds = (await _supa.GetUserIngredientIdsAsync(_currentUserId)).ToHashSet();
+
+                foreach (var ing in dbIngredients)
                 {
-                    LocalId = ing.Id,
-                    ExternalNumericId = extNum,
-                    ExternalIdStr = ing.ExternalId,
-                    Name = ing.Name,
-                    ImageUrl = ing.ImageUrl ?? "",
-                    IsSelected = isLoggedIn && _userIngredientIds.Contains(ing.Id),
-                    IsLoggedIn = isLoggedIn,
-                    IsAdmin = _isAdmin,
-                    FromApiOnly = false,
-                    Quantity = qu.Item1,
-                    Unit = qu.Item2
-                });
+                    int.TryParse(ing.ExternalId, out var extNum);
+                    _allLocal.Add(new IngredientListModel
+                    {
+                        LocalId = ing.Id,
+                        ExternalNumericId = extNum,
+                        ExternalIdStr = ing.ExternalId,
+                        Name = ing.Name,
+                        ImageUrl = ing.ImageUrl ?? "",
+                        IsSelected = _userIngredientIds.Contains(ing.Id),
+                        IsLoggedIn = true,
+                        IsAdmin = _isAdmin,
+                        FromApiOnly = false
+                    });
+                }
+            }
+            else
+            {
+                // Load guest temp items
+                _allLocal.AddRange(_tempGuestKitchen);
             }
 
             RefreshDisplayedList();
@@ -253,6 +197,56 @@ public partial class DisplayIngredientsPage : ContentPage
     {
         _lastApiOnlyRows.Clear();
         RefreshDisplayedList();
+    }
+
+    private void OnTabMyKitchenClicked(object sender, EventArgs e)
+    {
+        if (_currentTab == TabMode.MyKitchen) return;
+        _currentTab = TabMode.MyKitchen;
+        UpdateTabStyles();
+        
+        SearchPanel.IsVisible = false;
+        AddPanelContainer.IsVisible = false;
+        HelpText.Text = "Manage the ingredients you currently have in your kitchen.";
+
+        RefreshDisplayedList();
+    }
+
+    private void OnTabSearchClicked(object sender, EventArgs e)
+    {
+        if (_currentTab == TabMode.Search) return;
+        _currentTab = TabMode.Search;
+        UpdateTabStyles();
+        
+        SearchPanel.IsVisible = true;
+        AddPanelContainer.IsVisible = true;
+        HelpText.Text = "Search to find ingredients in the food database and add them to your kitchen.";
+
+        RefreshDisplayedList();
+    }
+
+    private void UpdateTabStyles()
+    {
+        Color pColor = Color.FromArgb("#512BD4");
+        if (Application.Current != null && Application.Current.Resources.TryGetValue("Primary", out var res) && res is Color themeColor)
+        {
+            pColor = themeColor;
+        }
+
+        if (_currentTab == TabMode.MyKitchen)
+        {
+            TabMyKitchen.BackgroundColor = pColor;
+            TabMyKitchen.TextColor = Colors.White;
+            TabSearch.BackgroundColor = Color.FromArgb("#1E1E1E");
+            TabSearch.TextColor = pColor;
+        }
+        else
+        {
+            TabSearch.BackgroundColor = pColor;
+            TabSearch.TextColor = Colors.White;
+            TabMyKitchen.BackgroundColor = Color.FromArgb("#1E1E1E");
+            TabMyKitchen.TextColor = pColor;
+        }
     }
 
     private async void OnSearchButtonPressed(object sender, EventArgs e)
@@ -293,9 +287,7 @@ public partial class DisplayIngredientsPage : ContentPage
                     FromApiOnly = true,
                     IsLoggedIn = isLoggedIn,
                     IsAdmin = _isAdmin,
-                    IsSelected = false,
-                    Quantity = "",
-                    Unit = ""
+                    IsSelected = false
                 });
             }
 
@@ -318,31 +310,44 @@ public partial class DisplayIngredientsPage : ContentPage
 
         try
         {
-            var q = SearchBar.Text?.Trim() ?? "";
-            var useFilter = !string.IsNullOrWhiteSpace(q);
-            var qLower = q.ToLowerInvariant();
-
-            IEnumerable<IngredientListModel> locals = _allLocal;
-            if (useFilter)
-                locals = _allLocal.Where(l => l.Name.ToLowerInvariant().Contains(qLower));
-
             Ingredients.Clear();
 
-            foreach (var item in locals)
+            if (_currentTab == TabMode.MyKitchen)
             {
-                item.IsLoggedIn = _currentUserId > 0;
-                item.IsAdmin = _isAdmin;
-                item.IsSelected = _currentUserId > 0 && _userIngredientIds.Contains(item.LocalId);
-                Ingredients.Add(item);
-            }
-
-            if (useFilter)
-            {
-                foreach (var row in _lastApiOnlyRows)
+                foreach (var item in _allLocal.Where(i => _userIngredientIds.Contains(i.LocalId)))
                 {
-                    row.IsLoggedIn = _currentUserId > 0;
-                    row.IsAdmin = _isAdmin;
-                    Ingredients.Add(row);
+                    item.IsLoggedIn = _currentUserId > 0;
+                    item.IsAdmin = _isAdmin;
+                    item.IsSelected = true;
+                    Ingredients.Add(item);
+                }
+            }
+            else
+            {
+                var q = SearchBar.Text?.Trim() ?? "";
+                var useFilter = !string.IsNullOrWhiteSpace(q);
+                var qLower = q.ToLowerInvariant();
+
+                IEnumerable<IngredientListModel> locals = _allLocal;
+                if (useFilter)
+                    locals = _allLocal.Where(l => l.Name.ToLowerInvariant().Contains(qLower));
+
+                foreach (var item in locals)
+                {
+                    item.IsLoggedIn = _currentUserId > 0;
+                    item.IsAdmin = _isAdmin;
+                    item.IsSelected = _currentUserId > 0 && _userIngredientIds.Contains(item.LocalId);
+                    Ingredients.Add(item);
+                }
+
+                if (useFilter)
+                {
+                    foreach (var row in _lastApiOnlyRows)
+                    {
+                        row.IsLoggedIn = _currentUserId > 0;
+                        row.IsAdmin = _isAdmin;
+                        Ingredients.Add(row);
+                    }
                 }
             }
         }
@@ -352,11 +357,7 @@ public partial class DisplayIngredientsPage : ContentPage
         }
     }
 
-    private void OnQuantityUnfocused(object? sender, FocusEventArgs e)
-    {
-        if (sender is VisualElement ve && ve.BindingContext is IngredientListModel item)
-            PersistQuantityFor(item);
-    }
+
 
     private async void OnKitchenToggleClicked(object sender, EventArgs e)
     {
@@ -373,16 +374,24 @@ public partial class DisplayIngredientsPage : ContentPage
         {
             if (!item.IsSelected)
             {
-                await _supa.AddUserIngredientAsync(_currentUserId, item.LocalId);
-                _userIngredientIds.Add(item.LocalId);
+                if (_currentUserId > 0)
+                    await _supa.AddUserIngredientAsync(_currentUserId, item.LocalId);
+                else
+                    _tempGuestKitchen.Add(item);
+
                 item.IsSelected = true;
-                PersistQuantityFor(item);
             }
             else
             {
-                await _supa.RemoveUserIngredientAsync(_currentUserId, item.LocalId);
-                _userIngredientIds.Remove(item.LocalId);
+                if (_currentUserId > 0)
+                    await _supa.RemoveUserIngredientAsync(_currentUserId, item.LocalId);
+                else
+                    _tempGuestKitchen.Remove(item);
+
                 item.IsSelected = false;
+                
+                if (_currentTab == TabMode.MyKitchen)
+                    Ingredients.Remove(item);
             }
 
             return;
@@ -404,7 +413,6 @@ public partial class DisplayIngredientsPage : ContentPage
                 _userIngredientIds.Add(localId);
                 _allLocal.Add(item);
                 _lastApiOnlyRows.RemoveAll(r => r.ExternalNumericId == item.ExternalNumericId);
-                PersistQuantityFor(item);
             }
         }
         catch (Exception ex)
@@ -422,10 +430,16 @@ public partial class DisplayIngredientsPage : ContentPage
         if (sender is not Button btn || btn.CommandParameter is not IngredientListModel item)
             return;
 
-        if (_currentUserId == 0)
+        if (item.FromApiOnly && _currentUserId == 0)
         {
-            await DisplayAlert("Login required", "Log in to manage your kitchen.", "OK");
-            return;
+            // Allowed for guests too
+        }
+        else if (_currentUserId == 0 && !item.FromApiOnly)
+        {
+            // Allow guest to remove from their temp kitchen
+             _tempGuestKitchen.Remove(item);
+             Ingredients.Remove(item);
+             return;
         }
 
         if (item.FromApiOnly)
@@ -453,9 +467,6 @@ public partial class DisplayIngredientsPage : ContentPage
                     await _supa.RemoveUserIngredientAsync(_currentUserId, item.LocalId);
                     _userIngredientIds.Remove(item.LocalId);
                     item.IsSelected = false;
-                    var mapRm = LoadQtyMap(_currentUserId);
-                    mapRm.Remove(item.LocalId);
-                    SaveQtyMap(_currentUserId, mapRm);
                     return;
                 }
 
@@ -473,9 +484,6 @@ public partial class DisplayIngredientsPage : ContentPage
             try
             {
                 await _supa.DeleteIngredientAsync(item.LocalId);
-                var map = LoadQtyMap(_currentUserId);
-                map.Remove(item.LocalId);
-                SaveQtyMap(_currentUserId, map);
 
                 _allLocal.RemoveAll(i => i.LocalId == item.LocalId);
                 _userIngredientIds.Remove(item.LocalId);
@@ -505,10 +513,9 @@ public partial class DisplayIngredientsPage : ContentPage
         await _supa.RemoveUserIngredientAsync(_currentUserId, item.LocalId);
         _userIngredientIds.Remove(item.LocalId);
         item.IsSelected = false;
-
-        var mapUser = LoadQtyMap(_currentUserId);
-        mapUser.Remove(item.LocalId);
-        SaveQtyMap(_currentUserId, mapUser);
+        
+        if (_currentTab == TabMode.MyKitchen)
+            Ingredients.Remove(item);
     }
 
     private void OnAddPanelToggle(object sender, EventArgs e)
@@ -529,8 +536,25 @@ public partial class DisplayIngredientsPage : ContentPage
 
         if (_currentUserId == 0)
         {
-            await DisplayAlert("Login required", "Log in to add products to your kitchen.", "OK");
-            return;
+             var guestModel = new IngredientListModel
+             {
+                 LocalId = _tempGuestKitchen.Count + 20000,
+                 Name = name,
+                 ImageUrl = "",
+                 IsLoggedIn = true,
+                 IsAdmin = false,
+                 IsSelected = true,
+                 FromApiOnly = false
+             };
+             _tempGuestKitchen.Add(guestModel);
+             _allLocal.Add(guestModel);
+             
+             NewIngredientEntry.Text = "";
+             _addPanelOpen = false;
+             AddIngredientForm.IsVisible = false;
+             AddPanelToggle.Text = "＋ Add product";
+             RefreshDisplayedList();
+             return;
         }
 
         if (_allLocal.Any(i => i.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
@@ -539,16 +563,9 @@ public partial class DisplayIngredientsPage : ContentPage
             return;
         }
 
-        var qty = NewQtyEntry.Text?.Trim() ?? "";
-        var unit = NewUnitEntry.Text?.Trim() ?? "";
-
         try
         {
             var added = await _supa.AddIngredientAsync(new Ingredient { Name = name });
-
-            var map = LoadQtyMap(_currentUserId);
-            map[added.Id] = (qty, unit);
-            SaveQtyMap(_currentUserId, map);
 
             await _supa.AddUserIngredientAsync(_currentUserId, added.Id);
             _userIngredientIds.Add(added.Id);
@@ -561,16 +578,12 @@ public partial class DisplayIngredientsPage : ContentPage
                 IsLoggedIn = true,
                 IsAdmin = _isAdmin,
                 IsSelected = true,
-                FromApiOnly = false,
-                Quantity = qty,
-                Unit = unit
+                FromApiOnly = false
             };
 
             _allLocal.Add(model);
 
             NewIngredientEntry.Text = "";
-            NewQtyEntry.Text = "";
-            NewUnitEntry.Text = "";
             _addPanelOpen = false;
             AddIngredientForm.IsVisible = false;
             AddPanelToggle.Text = "＋ Add product";
@@ -613,7 +626,14 @@ public partial class DisplayIngredientsPage : ContentPage
         if (!string.IsNullOrWhiteSpace(resolved.ImageUrl))
             item.ImageUrl = resolved.ImageUrl!;
 
-        await _supa.AddUserIngredientAsync(_currentUserId, resolved.Id);
+        if (_currentUserId > 0)
+        {
+            await _supa.AddUserIngredientAsync(_currentUserId, resolved.Id);
+        }
+        else
+        {
+             // Guest doesn't save to DB kitchen links, item is already added to _tempGuestKitchen in caller
+        }
         return resolved.Id;
     }
 }

@@ -165,6 +165,9 @@ public class SpoonacularRecipeInformation
     
     [JsonPropertyName("extendedIngredients")]
     public List<SpoonacularRecipeIngredient> ExtendedIngredients { get; set; } = new();
+
+    [JsonPropertyName("dishTypes")]
+    public List<string> DishTypes { get; set; } = new();
 }
 
 public class SpoonacularRecipeIngredient

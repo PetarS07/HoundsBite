@@ -10,14 +10,40 @@
         <ScrollView Grid.Row="0">
             <VerticalStackLayout Padding="24,24,24,0" Spacing="24">
 
-                <Label Text="Kitchen inventory"
-                       Style="{StaticResource HeaderLabel}"/>
+                <!-- Tab Switcher -->
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,-12,0,4">
+                    <Button x:Name="TabMyKitchen"
+                            Text="My Kitchen"
+                            Clicked="OnTabMyKitchenClicked"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="8"
+                            HeightRequest="40"
+                            BorderWidth="1"
+                            BorderColor="{StaticResource Primary}"/>
+                    <Button x:Name="TabSearch"
+                            Grid.Column="1"
+                            Text="Search &amp; Add"
+                            Clicked="OnTabSearchClicked"
+                            BackgroundColor="#1E1E1E"
+                            TextColor="{StaticResource Primary}"
+                            BorderColor="{StaticResource Primary}"
+                            BorderWidth="1"
+                            FontAttributes="Bold"
+                            CornerRadius="8"
+                            HeightRequest="40" />
+                </Grid>
 
-                <Label Text="Search to filter your catalog; press search to add matches from the food database. Set quantity and use the kitchen button to track what you have. Delete removes an item from your kitchen; admins can also delete from the global catalog."
+                <Label Text="Kitchen inventory"
+                       Style="{StaticResource HeaderLabel}" IsVisible="False"/>
+
+                <Label x:Name="HelpText"
+                       Text="Manage the ingredients you currently have in your kitchen."
                        TextColor="{StaticResource TextSecondary}"
                        Margin="0,-16,0,0"/>
 
-                <Border Style="{StaticResource CardView}" Padding="0" Margin="0,0,0,8">
+                <Border x:Name="SearchPanel" Style="{StaticResource CardView}" Padding="0" Margin="0,0,0,8" IsVisible="False">
                     <SearchBar x:Name="SearchBar"
                                Placeholder="Search ingredients…"
                                TextChanged="OnSearchTextChanged"
@@ -39,7 +65,7 @@
                     <CollectionView.ItemTemplate>
                         <DataTemplate>
                             <Border Style="{StaticResource CardView}" Padding="12" MinimumHeightRequest="180">
-                                <Grid RowDefinitions="Auto, Auto, Auto">
+                                <Grid RowDefinitions="Auto, Auto">
                                     <VerticalStackLayout Spacing="8" VerticalOptions="Start">
                                         <Image Source="{Binding ImageUrl}"
                                                HeightRequest="60"
@@ -56,22 +82,7 @@
                                                HorizontalTextAlignment="Center"/>
                                     </VerticalStackLayout>
 
-                                    <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0"
-                                          IsEnabled="{Binding IsLoggedIn}">
-                                        <Entry Text="{Binding Quantity, Mode=TwoWay}"
-                                               Placeholder="Qty"
-                                               FontSize="12"
-                                               HeightRequest="40"
-                                               Unfocused="OnQuantityUnfocused"/>
-                                        <Entry Grid.Column="1"
-                                               Text="{Binding Unit, Mode=TwoWay}"
-                                               Placeholder="Unit"
-                                               FontSize="12"
-                                               HeightRequest="40"
-                                               Unfocused="OnQuantityUnfocused"/>
-                                    </Grid>
-
-                                    <Grid Grid.Row="2" ColumnDefinitions="*, Auto" ColumnSpacing="6" Margin="0,8,0,0">
+                                    <Grid Grid.Row="1" ColumnDefinitions="*, Auto" ColumnSpacing="6" Margin="0,8,0,0">
                                         <Button Text="{Binding KitchenButtonText}"
                                                 BackgroundColor="{Binding KitchenButtonColor}"
                                                 TextColor="White"
@@ -105,9 +116,10 @@
 
         <Grid Grid.Row="1" RowDefinitions="Auto,Auto" Margin="0,-80,0,0">
 
-            <Border Grid.Row="0"
+            <Border x:Name="AddPanelContainer" Grid.Row="0"
                     BackgroundColor="#1A1A1A"
-                    StrokeThickness="0">
+                    StrokeThickness="0"
+                    IsVisible="False">
                 <VerticalStackLayout Spacing="0">
                     <Button x:Name="AddPanelToggle"
                             Text="＋ Add product"
@@ -127,20 +139,6 @@
                                TextColor="White"
                                PlaceholderColor="#888"
                                BackgroundColor="#252525" />
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                            <Entry x:Name="NewQtyEntry"
-                                   Placeholder="Quantity"
-                                   Keyboard="Default"
-                                   TextColor="White"
-                                   PlaceholderColor="#888"
-                                   BackgroundColor="#252525" />
-                            <Entry x:Name="NewUnitEntry"
-                                   Grid.Column="1"
-                                   Placeholder="Unit"
-                                   TextColor="White"
-                                   PlaceholderColor="#888"
-                                   BackgroundColor="#252525" />
-                        </Grid>
                         <Button Text="Add to catalog and kitchen"
                                 Clicked="OnAddIngredientClicked"
                                 HeightRequest="36"

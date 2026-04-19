@@ -14,6 +14,9 @@ public partial class DisplayRecipesPage : ContentPage
     private string _searchText = "";
     private List<int> _userFavoriteRecipeIds = new();
 
+    // Session-only recipes for guests
+    private static List<RecipeDisplay> _tempGuestRecipes = new();
+
     public DisplayRecipesPage(SupabaseService supa, FoodApiService foodApi)
     {
         InitializeComponent();
@@ -78,31 +81,20 @@ public partial class DisplayRecipesPage : ContentPage
                 }));
             }
 
-            // 2. Fetch Local Community Recipes
-            var localRecipes = await _supa.GetAllRecipesAsync();
-            var recipeIngredients = await _supa.GetAllRecipeIngredientsAsync();
-            
-            List<int> userIngredientIds = new();
+            // 2. Fetch Personal Recipes
+            List<Recipe> myRecipes = new();
+
             if (_currentUserId > 0)
             {
-                userIngredientIds = await _supa.GetUserIngredientIdsAsync(_currentUserId);
+                myRecipes = await _supa.GetRecipesByUserIdAsync(_currentUserId);
                 _userFavoriteRecipeIds = await _supa.GetFavoriteRecipeIdsAsync(_currentUserId);
             }
 
-            // Filter Community Recipes (Only Approved ones)
-            IEnumerable<Recipe> filteredLocal = localRecipes.Where(r => r.Status == "Approved");
+            // Apply searching and category filtering to local list
+            IEnumerable<Recipe> filteredLocal = myRecipes;
 
             if (_favoritesOnly && _currentUserId > 0)
                 filteredLocal = filteredLocal.Where(r => _userFavoriteRecipeIds.Contains(r.Id));
-
-            if (_filterActive && userIngredientIds.Count > 0)
-            {
-                filteredLocal = filteredLocal.Where(r =>
-                {
-                    var riIds = recipeIngredients.Where(ri => ri.RecipeId == r.Id).Select(ri => ri.IngredientId);
-                    return riIds.Any() && riIds.All(id => userIngredientIds.Contains(id));
-                });
-            }
 
             var selectedCategory = CategoryFilter.SelectedItem?.ToString();
             if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "All")
@@ -111,6 +103,7 @@ public partial class DisplayRecipesPage : ContentPage
             if (!string.IsNullOrWhiteSpace(_searchText))
                 filteredLocal = filteredLocal.Where(r => r.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
 
+            // Map standard recipes to display models
             combinedDisplayList.AddRange(filteredLocal.Select(r => new RecipeDisplay
             {
                 Id = r.Id,
@@ -122,6 +115,20 @@ public partial class DisplayRecipesPage : ContentPage
                 IsLocalMode = true,
                 IsApiMode = false
             }));
+
+            // 3. Add Guest Temporary Recipes (If applicable)
+            if (_currentUserId == 0 && _tempGuestRecipes.Count > 0)
+            {
+                var guestResults = _tempGuestRecipes.AsEnumerable();
+                
+                if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "All")
+                    guestResults = guestResults.Where(r => r.Type == selectedCategory);
+                
+                if (!string.IsNullOrWhiteSpace(_searchText))
+                    guestResults = guestResults.Where(r => r.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+                combinedDisplayList.AddRange(guestResults);
+            }
 
             RecipeList.ItemsSource = combinedDisplayList;
 
@@ -137,6 +144,12 @@ public partial class DisplayRecipesPage : ContentPage
 
     private async void OnImportRecipeClicked(object sender, EventArgs e)
     {
+        if (_currentUserId == 0)
+        {
+            await DisplayAlert("Login Required", "Please log in to your account to import recipes to your collection.", "OK");
+            return;
+        }
+
         if (sender is Button btn && btn.CommandParameter is RecipeDisplay apiRecipe)
         {
             if (string.IsNullOrEmpty(apiRecipe.ExternalId)) return;
@@ -175,14 +188,25 @@ public partial class DisplayRecipesPage : ContentPage
                     CookTime = details.ReadyInMinutes / 2,
                     Servings = details.Servings,
                     Difficulty = "Medium",
-                    Type = "Other", // Default
+                    Type = MapDishTypesToCategory(details.DishTypes),
                     UserId = _currentUserId > 0 ? _currentUserId : 1, // Admin fallback
                     Source = "Api",
                     Status = "Approved"
                 };
 
-                // Add to DB
-                var savedRecipe = await _supa.AddRecipeAsync(newRecipe);
+                Recipe savedRecipe;
+
+                if (_currentUserId > 0)
+                {
+                    // Save to DB for persistent users
+                    savedRecipe = await _supa.AddRecipeAsync(newRecipe);
+                }
+                else
+                {
+                    // Save to Session Only for guests
+                    savedRecipe = newRecipe;
+                    savedRecipe.Id = _tempGuestRecipes.Count + 10000; // Fake ID
+                }
 
                 // 4. Auto-Mapping Ingredients
                 var allDbIngredients = await _supa.GetAllIngredientsAsync();
@@ -211,14 +235,17 @@ public partial class DisplayRecipesPage : ContentPage
 
                     recipeIngredientIds.Add(matched.Id);
 
-                    // Link to Recipe
-                    await _supa.AddRecipeIngredientAsync(new RecipeIngredient 
-                    { 
-                        RecipeId = savedRecipe.Id, 
-                        IngredientId = matched.Id,
-                        Amount = apiIng.Amount.ToString(),
-                        Unit = apiIng.Unit ?? ""
-                    });
+                    // Link to Recipe in DB (only for logged in users)
+                    if (_currentUserId > 0)
+                    {
+                        await _supa.AddRecipeIngredientAsync(new RecipeIngredient 
+                        { 
+                            RecipeId = savedRecipe.Id, 
+                            IngredientId = matched.Id,
+                            Amount = apiIng.Amount.ToString(),
+                            Unit = apiIng.Unit ?? ""
+                        });
+                    }
                 }
 
                 if (_currentUserId > 0)
@@ -226,13 +253,27 @@ public partial class DisplayRecipesPage : ContentPage
                     foreach (var ingId in recipeIngredientIds)
                         await _supa.AddUserIngredientAsync(_currentUserId, ingId);
                 }
+                else
+                {
+                    // Add to guest temp list
+                    var display = new RecipeDisplay
+                    {
+                        Id = savedRecipe.Id,
+                        Name = savedRecipe.Name,
+                        Type = savedRecipe.Type,
+                        ImagePath = savedRecipe.ImagePath,
+                        IsLocalMode = true,
+                        IsApiMode = false
+                    };
+                    _tempGuestRecipes.Add(display);
+                }
 
                 var importMsg = _currentUserId > 0
-                    ? "Recipe imported. Its ingredients were added to your kitchen inventory."
-                    : "Recipe imported successfully! Log in to sync those ingredients to your kitchen.";
+                    ? "Recipe imported successfully to your cookbook."
+                    : "Recipe imported temporarily. It will be removed when you restart the app.";
 
-                await DisplayAlert("Success", importMsg, "View Now");
-                await Shell.Current.GoToAsync($"recipe-detail?recipeId={savedRecipe.Id}");
+                await DisplayAlert("Imported", importMsg, "OK");
+                await LoadRecipes();
             }
             catch (Exception ex)
             {
@@ -304,5 +345,22 @@ public partial class DisplayRecipesPage : ContentPage
     private async void OnCategoryFilterChanged(object sender, EventArgs e)
     {
         await LoadRecipes();
+    }
+    private string MapDishTypesToCategory(List<string>? dishTypes)
+    {
+        if (dishTypes == null || dishTypes.Count == 0) return "Other";
+
+        var types = dishTypes.Select(t => t.ToLower()).ToList();
+
+        if (types.Contains("breakfast") || types.Contains("morning meal") || types.Contains("brunch"))
+            return "Breakfast";
+        
+        if (types.Contains("lunch"))
+            return "Lunch";
+        
+        if (types.Contains("dinner") || types.Contains("main course") || types.Contains("main dish"))
+            return "Dinner";
+
+        return "Other";
     }
 }
