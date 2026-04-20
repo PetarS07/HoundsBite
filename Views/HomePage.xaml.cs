@@ -27,8 +27,6 @@ public partial class HomePage : ContentPage
         if (userId == 0)
         {
             IngredientsCard.IsVisible = false;
-            AdminIngredientsCard.IsVisible = false;
-            AdminRecipesCard.IsVisible = false;
 
             // Center Recipes card when it's the only one
             Grid.SetColumn(RecipesCard, 0);
@@ -44,8 +42,6 @@ public partial class HomePage : ContentPage
         {
             Preferences.Remove("LoggedUserId");
             IngredientsCard.IsVisible = false;
-            AdminIngredientsCard.IsVisible = false;
-            AdminRecipesCard.IsVisible = false;
 
             // Reset centering
             Grid.SetColumn(RecipesCard, 0);
@@ -62,15 +58,8 @@ public partial class HomePage : ContentPage
         RecipesCard.HorizontalOptions = LayoutOptions.Fill;
         RecipesCard.WidthRequest = -1;
 
-        AdminIngredientsCard.IsVisible = user.IsAdmin;
-        AdminRecipesCard.IsVisible = user.IsAdmin;
+
     }
-
-    private async void GoToIngredients(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//admin-ingredients");
-
-    private async void GoToRecipes(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("//admin-recipes");
 
     private async void GoToDisplayIngredients(object sender, EventArgs e)
     {

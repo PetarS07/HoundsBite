@@ -76,41 +76,6 @@
                         </VerticalStackLayout>
                     </Border>
 
-                    <!-- Admin: Manage Ingredients -->
-                    <Border x:Name="AdminIngredientsCard"
-                            Grid.Row="1" Grid.Column="0"
-                            Style="{StaticResource CardView}"
-                            IsVisible="False"
-                            Stroke="{StaticResource Secondary}"
-                            StrokeThickness="1"
-                            MinimumHeightRequest="120">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="GoToIngredients" />
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout Spacing="8">
-                            <Label Text="⚙️" FontSize="32" HorizontalOptions="Center"/>
-                            <Label Text="Manage Ing." Style="{StaticResource CardTitle}" HorizontalOptions="Center" FontSize="14"/>
-                            <Label Text="Admin Only" Style="{StaticResource CardSubtitle}" HorizontalOptions="Center" TextColor="{StaticResource Secondary}"/>
-                        </VerticalStackLayout>
-                    </Border>
-
-                    <!-- Admin: Manage Recipes -->
-                    <Border x:Name="AdminRecipesCard"
-                            Grid.Row="1" Grid.Column="1"
-                            Style="{StaticResource CardView}"
-                            IsVisible="False"
-                            Stroke="{StaticResource Secondary}"
-                            StrokeThickness="1"
-                            MinimumHeightRequest="120">
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="GoToRecipes" />
-                        </Border.GestureRecognizers>
-                        <VerticalStackLayout Spacing="8">
-                            <Label Text="⚙️" FontSize="32" HorizontalOptions="Center"/>
-                            <Label Text="Manage Rec." Style="{StaticResource CardTitle}" HorizontalOptions="Center" FontSize="14"/>
-                            <Label Text="Admin Only" Style="{StaticResource CardSubtitle}" HorizontalOptions="Center" TextColor="{StaticResource Secondary}"/>
-                        </VerticalStackLayout>
-                    </Border>
                 </Grid>
 
                 <!-- Bottom spacing so content clears the NavBar -->
